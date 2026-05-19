@@ -10,9 +10,11 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const page = parseInt(searchParams.get('page') ?? '1');
     const limit = parseInt(searchParams.get('limit') ?? '8');
+    const search = searchParams.get('search') || undefined;
+    const category = searchParams.get('category') || undefined;
 
     const useCase = new GetItemsUseCase(itemRepository);
-    const { items, total } = await useCase.execute(page, limit);
+    const { items, total } = await useCase.execute(page, limit, { search, category });
 
     return NextResponse.json({
       data: items,

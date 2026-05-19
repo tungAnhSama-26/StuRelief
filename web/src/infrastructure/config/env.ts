@@ -15,12 +15,15 @@ const envSchema = z.object({
   
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
   CLOUDINARY_URL: z.string().optional(),
+  GOOGLE_CLIENT_ID: z.string().optional(),
+  GOOGLE_CLIENT_SECRET: z.string().optional(),
+  GOOGLE_ADMIN_EMAIL: z.string().email().default('admin@gmail.com'),
 });
 
 const _env = envSchema.safeParse(process.env);
 
 if (!_env.success) {
-  console.error('❌ Lỗi cấu hình môi trường Web:');
+  console.error(' Lỗi cấu hình môi trường Web:');
   console.error(_env.error.flatten().fieldErrors);
   throw new Error('Ứng dụng Web không thể khởi động do cấu hình sai tệp web/.env');
 }

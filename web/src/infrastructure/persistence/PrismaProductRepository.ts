@@ -15,7 +15,7 @@ export class PrismaProductRepository implements IProductRepository {
     ]);
     
     return {
-      products: products as unknown as Product[],
+      products: products.map(p => ({ ...(p as any), isQuickRescue: false })) as unknown as Product[],
       total,
     };
   }
@@ -24,7 +24,7 @@ export class PrismaProductRepository implements IProductRepository {
     const product = await prisma.product.findUnique({
       where: { id },
     });
-    return (product as unknown as Product) || null;
+    return product ? ({ ...(product as any), isQuickRescue: false } as unknown as Product) : null;
   }
 
   async save(data: CreateProductDTO): Promise<Product> {
@@ -37,9 +37,11 @@ export class PrismaProductRepository implements IProductRepository {
         status: data.status,
         condition: data.condition,
         description: data.description,
-        isQuickRescue: data.isQuickRescue,
       },
     });
-    return newProduct as unknown as Product;
+    return {
+      ...(newProduct as any),
+      isQuickRescue: false,
+    } as unknown as Product;
   }
 }

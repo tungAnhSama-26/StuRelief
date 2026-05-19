@@ -56,7 +56,9 @@ model StudentProfile {
   fullName     String
   phoneNumber  String?
   universityId String
+  university   University @relation(fields: [universityId], references: [id])
   campusId     String?
+  campus       Campus?    @relation(fields: [campusId], references: [id])
   bio          String?
   avatarUrl    String?
 }
