@@ -21,6 +21,8 @@ async function main() {
   await prisma.category.deleteMany({});
   await prisma.studentProfile.deleteMany({});
   await prisma.user.deleteMany({});
+  await prisma.meetingPoint.deleteMany({});
+  await prisma.campus.deleteMany({});
   await prisma.university.deleteMany({});
 
   // 2. UNIVERSITIES (5+)
@@ -30,7 +32,7 @@ async function main() {
       data: {
         id: uni.id,
         name: uni.name,
-        domain: uni.domain,
+        emailDomains: [uni.domain],
         campuses: { create: uni.campuses.map(name => ({ name })) },
       },
     });
@@ -40,7 +42,12 @@ async function main() {
   console.log('[DATA] Seeding Categories...');
   const categoryIds: Record<string, string> = {};
   for (const cat of categories) {
-    const created = await prisma.category.create({ data: cat });
+    const created = await prisma.category.create({
+      data: {
+        name: cat.name,
+        slug: cat.slug,
+      },
+    });
     categoryIds[cat.slug] = created.id;
   }
 
@@ -109,6 +116,7 @@ async function main() {
         userId: userIds[i % userIds.length],
         title: 'Thông báo mới',
         content: `Bạn có một cập nhật mới về sản phẩm số ${i}`,
+        type: 'SYSTEM',
       },
     });
   }

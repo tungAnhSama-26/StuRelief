@@ -1,0 +1,702 @@
+'use client';
+
+import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { 
+  HeartHandshake, 
+  Mail, 
+  Lock, 
+  User, 
+  GraduationCap, 
+  Check, 
+  AlertCircle,
+  Eye,
+  EyeOff,
+  X
+} from 'lucide-react';
+
+export default function LoginPage() {
+  const router = useRouter();
+  
+  // States
+  const [isRegister, setIsRegister] = useState(false);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [fullName, setFullName] = useState('');
+  const [studentCode, setStudentCode] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+  
+  // Google OAuth Test Simulation States
+  const [showGoogleModal, setShowGoogleModal] = useState(false);
+  const [googleEmail, setGoogleEmail] = useState('admin@gmail.com');
+  const [googleName, setGoogleName] = useState('Quản trị viên Google');
+  const [showCustomInput, setShowCustomInput] = useState(false);
+  
+  // Feedback Toast
+  const [feedback, setFeedback] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+
+  // Automatically clear feedback toast after 4 seconds
+  useEffect(() => {
+    if (feedback) {
+      const timer = setTimeout(() => setFeedback(null), 4000);
+      return () => clearTimeout(timer);
+    }
+  }, [feedback]);
+
+  // Listen to Google OAuth callback parameters & error redirects
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const err = params.get('error');
+      if (err === 'google_not_configured') {
+        showFeedback('Chưa cấu hình Google Client ID/Secret cho đăng nhập Google thật.', 'error');
+      } else if (err === 'google_oauth_denied') {
+        showFeedback('Bạn đã hủy đăng nhập Google.', 'error');
+      } else if (err === 'google_oauth_state_invalid') {
+        showFeedback('Phiên đăng nhập Google không hợp lệ, vui lòng thử lại.', 'error');
+      } else if (err === 'google_oauth_failed') {
+        showFeedback('Xác thực tài khoản Google OAuth thất bại!', 'error');
+      } else if (err === 'google_email_missing') {
+        showFeedback('Tài khoản Google của bạn không công khai Email!', 'error');
+      } else if (err === 'google_server_error') {
+        showFeedback('Lỗi máy chủ khi xử lý luồng xác thực Google!', 'error');
+      }
+    }
+  }, []);
+
+  const showFeedback = (message: string, type: 'success' | 'error' = 'success') => {
+    setFeedback({ message, type });
+  };
+
+  const handleGoogleLoginSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!googleEmail) {
+      showFeedback('Vui lòng cung cấp địa chỉ email Google!', 'error');
+      return;
+    }
+
+    await handleDirectGoogleLogin(googleEmail, googleName);
+  };
+
+  const handleDirectGoogleLogin = async (email: string, name: string) => {
+    setLoading(true);
+    try {
+      const res = await fetch('/api/auth/google', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, fullName: name }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.message || 'Đăng nhập Google thất bại!');
+      }
+
+      showFeedback('Đăng nhập Google thành công! Đang chuyển hướng...', 'success');
+      
+      // Store user details in localStorage for quick client reads
+      localStorage.setItem('sturelief_user', JSON.stringify(data.user));
+      setShowGoogleModal(false);
+
+      setTimeout(() => {
+        router.push('/');
+        router.refresh();
+      }, 1000);
+    } catch (err: any) {
+      showFeedback(err.message || 'Có lỗi xảy ra khi đăng nhập bằng Google!', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleLoginSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email || !password) {
+      showFeedback('Vui lòng điền đầy đủ email và mật khẩu!', 'error');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.message || 'Đã xảy ra lỗi!');
+      }
+
+      showFeedback('Đăng nhập thành công! Đang chuyển hướng...', 'success');
+      
+      // Store user details in localStorage for quick client reads
+      localStorage.setItem('sturelief_user', JSON.stringify(data.user));
+      
+      // Redirect home and force page refresh to sync header
+      setTimeout(() => {
+        router.push('/');
+        router.refresh();
+      }, 1000);
+    } catch (err: any) {
+      showFeedback(err.message || 'Tài khoản hoặc mật khẩu không chính xác!', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRegisterSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email || !password || !fullName) {
+      showFeedback('Họ tên, email và mật khẩu là bắt buộc!', 'error');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const res = await fetch('/api/auth/signup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email,
+          password,
+          fullName,
+          studentCode,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.message || 'Đăng ký tài khoản thất bại!');
+      }
+
+      showFeedback('Đăng ký tài khoản thành công! Hãy đăng nhập.', 'success');
+      
+      // Switch back to Login view and pre-populate email
+      setIsRegister(false);
+      setPassword('');
+    } catch (err: any) {
+      showFeedback(err.message || 'Có lỗi xảy ra khi tạo tài khoản!', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <main className="min-h-screen bg-slate-50 dark:bg-zinc-950 flex items-center justify-center p-4 sm:p-6 md:p-8 font-sans antialiased transition-colors duration-300">
+      {/* Toast Alert */}
+      {feedback && (
+        <div className={`fixed top-6 right-6 z-50 flex items-center gap-3 px-6 py-4 rounded-2xl shadow-xl backdrop-blur-md transition-all duration-300 transform translate-y-0 ${
+          feedback.type === 'success' 
+            ? 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400' 
+            : 'bg-rose-500/10 border border-rose-500/20 text-rose-600 dark:text-rose-400'
+        }`}>
+          {feedback.type === 'success' ? (
+            <div className="w-8 h-8 rounded-full bg-emerald-500/20 flex items-center justify-center">
+              <Check className="w-5 h-5 text-emerald-500" />
+            </div>
+          ) : (
+            <div className="w-8 h-8 rounded-full bg-rose-500/20 flex items-center justify-center">
+              <AlertCircle className="w-5 h-5 text-rose-500" />
+            </div>
+          )}
+          <span className="font-bold text-sm">{feedback.message}</span>
+        </div>
+      )}
+
+      {/* Main Container */}
+      <div className="w-full max-w-6xl bg-white dark:bg-zinc-900/60 dark:backdrop-blur-xl rounded-[32px] overflow-hidden shadow-[0_24px_80px_rgba(0,0,0,0.06)] border border-slate-100 dark:border-zinc-800 flex flex-col md:flex-row transition-all duration-300">
+        
+        {/* Left Panel (Premium illustrated Branding/Bento Showcase) */}
+        <div className="w-full md:w-1/2 bg-blue-600 dark:bg-blue-700 p-8 sm:p-12 md:p-16 flex flex-col justify-between relative overflow-hidden text-white min-h-[400px] md:min-h-[680px]">
+          {/* Subtle decorative background glow and shapes */}
+          <div className="absolute top-0 right-0 w-96 h-96 bg-blue-500/30 rounded-full blur-[100px] -mr-20 -mt-20" />
+          <div className="absolute bottom-0 left-0 w-96 h-96 bg-blue-400/20 rounded-full blur-[100px] -ml-20 -mb-20" />
+
+          {/* StuRelief App Emblem */}
+          <div className="relative flex items-center gap-3 z-10">
+            <div className="w-10 h-10 rounded-2xl bg-white/10 backdrop-blur-md flex items-center justify-center border border-white/20">
+              <HeartHandshake className="w-6 h-6 text-white" />
+            </div>
+            <span className="font-extrabold text-xl tracking-wide uppercase">StuRelief</span>
+          </div>
+
+          {/* Showcase Widgets (Mocking the beautiful design in user's request) */}
+          <div className="relative z-10 my-8 space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              {/* Stat 1 */}
+              <div className="bg-white/10 backdrop-blur-md border border-white/20 p-5 rounded-2xl">
+                <span className="text-[10px] uppercase font-bold tracking-wider opacity-60">Sản phẩm hiện có</span>
+                <div className="text-3xl font-extrabold mt-1">19+</div>
+                <p className="text-[11px] opacity-70 mt-1">Tin rao đang hoạt động</p>
+              </div>
+              {/* Stat 2 */}
+              <div className="bg-white/10 backdrop-blur-md border border-white/20 p-5 rounded-2xl">
+                <span className="text-[10px] uppercase font-bold tracking-wider opacity-60">Độ tin cậy</span>
+                <div className="text-3xl font-extrabold mt-1">100%</div>
+                <p className="text-[11px] opacity-70 mt-1">Xác thực mã sinh viên</p>
+              </div>
+            </div>
+            
+            {/* Horizontal Banner Card */}
+            <div className="bg-white/10 backdrop-blur-md border border-white/20 p-5 rounded-2xl flex items-center gap-4">
+              <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center font-bold text-lg">
+                🤝
+              </div>
+              <div>
+                <h4 className="font-bold text-sm">Giao dịch an toàn & tin cậy</h4>
+                <p className="text-xs opacity-75 mt-0.5">Hỗ trợ gặp trực tiếp tại ký túc xá, giảng đường.</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Heading and description */}
+          <div className="relative z-10">
+            <h1 className="text-3xl sm:text-4xl font-black leading-tight tracking-tight">
+              Kết Nối & Chia Sẻ <br />Đồ Cũ Sinh Viên
+            </h1>
+            <p className="text-sm opacity-80 mt-4 leading-relaxed max-w-sm">
+              Nền tảng hàng đầu dành riêng cho sinh viên để trao đổi giáo trình, quần áo, xe cộ, đồ công nghệ uy tín và tiết kiệm.
+            </p>
+          </div>
+        </div>
+
+        {/* Right Panel (Interactive Login / Register Form) */}
+        <div className="w-full md:w-1/2 p-8 sm:p-12 md:p-16 flex flex-col justify-center bg-white dark:bg-zinc-900 transition-colors duration-300">
+          
+          {/* Logo (Emblem) */}
+          <div className="flex items-center justify-center mb-6">
+            <div className="w-14 h-14 rounded-[22px] bg-blue-500/10 dark:bg-blue-500/20 flex items-center justify-center text-blue-600 dark:text-blue-400">
+              <HeartHandshake className="w-8 h-8" />
+            </div>
+          </div>
+
+          {/* Welcome Titles */}
+          <div className="text-center mb-8">
+            <h2 className="text-2xl font-black text-slate-800 dark:text-white">
+              {isRegister ? 'Tạo Tài Khoản Mới!' : 'Chào Mừng Trở Lại!'}
+            </h2>
+            <p className="text-sm text-slate-500 dark:text-zinc-400 mt-2">
+              {isRegister 
+                ? 'Hãy đăng ký để tham gia cộng đồng mua bán sinh viên.' 
+                : 'Đăng nhập để kết nối với hàng nghìn sinh viên uy tín.'}
+            </p>
+          </div>
+
+          {/* Dynamic Form Form */}
+          <form onSubmit={isRegister ? handleRegisterSubmit : handleLoginSubmit} className="space-y-5">
+            
+            {/* FULL NAME (Only for Register) */}
+            {isRegister && (
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-600 dark:text-zinc-400 uppercase tracking-wider">Họ tên sinh viên</label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none text-slate-400">
+                    <User className="w-5 h-5" />
+                  </div>
+                  <input
+                    type="text"
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                    placeholder="Nguyen Van A"
+                    className="w-full pl-12 pr-4 py-3.5 bg-slate-50 dark:bg-zinc-800/50 border border-slate-200 dark:border-zinc-800 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 dark:text-white transition-all"
+                    required
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* EMAIL */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-slate-600 dark:text-zinc-400 uppercase tracking-wider">Địa chỉ Email</label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none text-slate-400">
+                  <Mail className="w-5 h-5" />
+                </div>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="name@university.edu.vn"
+                  className="w-full pl-12 pr-4 py-3.5 bg-slate-50 dark:bg-zinc-800/50 border border-slate-200 dark:border-zinc-800 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 dark:text-white transition-all"
+                  required
+                />
+              </div>
+            </div>
+
+            {/* STUDENT CODE (Only for Register) */}
+            {isRegister && (
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-600 dark:text-zinc-400 uppercase tracking-wider">Mã sinh viên (Không bắt buộc)</label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none text-slate-400">
+                    <GraduationCap className="w-5 h-5" />
+                  </div>
+                  <input
+                    type="text"
+                    value={studentCode}
+                    onChange={(e) => setStudentCode(e.target.value)}
+                    placeholder="MSSV123456"
+                    className="w-full pl-12 pr-4 py-3.5 bg-slate-50 dark:bg-zinc-800/50 border border-slate-200 dark:border-zinc-800 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 dark:text-white transition-all"
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* PASSWORD */}
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-bold text-slate-600 dark:text-zinc-400 uppercase tracking-wider">Mật khẩu</label>
+                {!isRegister && (
+                  <button 
+                    type="button" 
+                    onClick={() => showFeedback('Chức năng quên mật khẩu sẽ được hỗ trợ qua email sinh viên.', 'success')}
+                    className="text-xs font-semibold text-blue-600 dark:text-blue-400 hover:underline"
+                  >
+                    Quên mật khẩu?
+                  </button>
+                )}
+              </div>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none text-slate-400">
+                  <Lock className="w-5 h-5" />
+                </div>
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  className="w-full pl-12 pr-12 py-3.5 bg-slate-50 dark:bg-zinc-800/50 border border-slate-200 dark:border-zinc-800 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 dark:text-white transition-all"
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute inset-y-0 right-4 flex items-center text-slate-400 hover:text-slate-600 dark:hover:text-zinc-200 transition-colors"
+                >
+                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                </button>
+              </div>
+            </div>
+
+            {/* Remember Me (Only for Login) */}
+            {!isRegister && (
+              <div className="flex items-center">
+                <input
+                  id="remember-me"
+                  type="checkbox"
+                  defaultChecked
+                  className="w-4.5 h-4.5 text-blue-600 border-slate-300 dark:border-zinc-700 rounded focus:ring-blue-500"
+                />
+                <label htmlFor="remember-me" className="ml-2 text-xs font-medium text-slate-500 dark:text-zinc-400">
+                  Ghi nhớ đăng nhập
+                </label>
+              </div>
+            )}
+
+            {/* SUBMIT BUTTON */}
+            <button
+              type="submit"
+              disabled={loading}
+              className={`w-full py-4 rounded-2xl font-bold text-sm tracking-wide shadow-lg shadow-blue-500/10 hover:shadow-blue-500/20 text-white bg-blue-600 dark:bg-blue-500 hover:bg-blue-700 dark:hover:bg-blue-600 active:scale-[0.98] transition-all flex items-center justify-center gap-2 cursor-pointer ${
+                loading ? 'opacity-80 cursor-wait' : ''
+              }`}
+            >
+              {loading ? (
+                <>
+                  <svg className="animate-spin h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                  </svg>
+                  <span>Đang xử lý...</span>
+                </>
+              ) : (
+                <span>{isRegister ? 'Đăng Ký Tài Khoản' : 'Đăng Nhập'}</span>
+              )}
+            </button>
+
+            {/* Alternate Google Sign-in Mockup (as in attached image) */}
+            <div className="relative flex items-center justify-center my-6">
+              <div className="absolute inset-x-0 h-px bg-slate-150 dark:bg-zinc-800" />
+              <span className="relative px-4 text-xs font-semibold text-slate-400 dark:text-zinc-500 bg-white dark:bg-zinc-900 uppercase">Hoặc đăng nhập nhanh</span>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => {
+                window.location.href = '/api/auth/google';
+              }}
+              className="w-full py-3.5 rounded-2xl font-bold text-xs tracking-wide bg-white dark:bg-zinc-800/30 hover:bg-slate-50 dark:hover:bg-zinc-800/60 border border-slate-200 dark:border-zinc-800 text-slate-700 dark:text-zinc-200 transition-all flex items-center justify-center gap-2.5 active:scale-[0.98] cursor-pointer"
+            >
+              {/* Google Colored Icon */}
+              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none">
+                <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+                <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+                <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l3.66-2.85z" fill="#FBBC05"/>
+                <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.85c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+              </svg>
+              <span>Đăng nhập với Google</span>
+            </button>
+          </form>
+
+          {/* Form Switcher */}
+          <div className="text-center mt-8">
+            <span className="text-sm text-slate-500 dark:text-zinc-400">
+              {isRegister ? 'Đã có tài khoản?' : 'Chưa có tài khoản sinh viên?'}
+            </span>
+            <button
+              onClick={() => {
+                setIsRegister(!isRegister);
+                setFeedback(null);
+              }}
+              className="ml-2 text-sm font-bold text-blue-600 dark:text-blue-400 hover:underline hover:text-blue-700 transition-colors"
+            >
+              {isRegister ? 'Đăng nhập ngay' : 'Đăng ký ngay'}
+            </button>
+          </div>
+
+        </div>
+
+      </div>
+
+      {/* ========================================================================= */}
+      {/* 3. GOOGLE SIGN-IN INTERACTIVE MOCKUP MODAL */}
+      {/* ========================================================================= */}
+      {showGoogleModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-950/70 backdrop-blur-sm">
+          <div className="relative bg-white dark:bg-zinc-900 w-full max-w-2xl rounded-[32px] overflow-hidden shadow-2xl border border-slate-100 dark:border-zinc-800 animate-scale-up">
+            
+            {/* Top Bar matching Google UI */}
+            <div className="px-8 py-5 border-b border-slate-100 dark:border-zinc-800/60 flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                {/* Google logo colored */}
+                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none">
+                  <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+                  <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+                  <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l3.66-2.85z" fill="#FBBC05"/>
+                  <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.85c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+                </svg>
+                <span className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 font-sans tracking-wide">Sign in with Google</span>
+              </div>
+              <button 
+                onClick={() => {
+                  setShowGoogleModal(false);
+                  setShowCustomInput(false);
+                }}
+                className="p-1.5 hover:bg-slate-100 dark:hover:bg-zinc-800 text-zinc-400 dark:text-zinc-500 rounded-full transition-colors cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Main Area */}
+            <div className="grid grid-cols-1 md:grid-cols-5 gap-8 p-8 min-h-[380px]">
+              
+              {/* Left Column: Product Identity & Heading */}
+              <div className="md:col-span-2 flex flex-col justify-start pt-2">
+                {/* StuRelief mock logo as seen in image */}
+                <div className="w-12 h-12 rounded-xl bg-zinc-950 dark:bg-white flex items-center justify-center text-white dark:text-zinc-950 mb-6 shadow-md">
+                  <HeartHandshake className="w-6 h-6 animate-pulse" />
+                </div>
+                <h2 className="text-3xl font-normal text-zinc-800 dark:text-zinc-100 tracking-tight leading-tight font-sans">
+                  Chọn tài khoản
+                </h2>
+                <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-3.5 leading-relaxed">
+                  để tiếp tục vào{' '}
+                  <span className="font-semibold text-blue-600 dark:text-blue-400">StuRelief</span>
+                </p>
+              </div>
+
+              {/* Right Column: Account Choices or Custom Entry Form */}
+              <div className="md:col-span-3 flex flex-col justify-start max-h-[340px] overflow-y-auto pr-1">
+                {!showCustomInput ? (
+                  /* ACCOUNT CHOOSER LIST */
+                  <div className="space-y-0 divide-y divide-slate-100 dark:divide-zinc-800/80">
+                    
+                    {/* Account 1: Admin config email (from .env) */}
+                    <button
+                      onClick={() => handleDirectGoogleLogin('admin@gmail.com', 'Quản trị viên Hệ thống')}
+                      className="w-full py-3.5 flex items-center gap-3.5 text-left hover:bg-zinc-50 dark:hover:bg-zinc-800/40 rounded-xl px-2.5 transition-colors cursor-pointer group"
+                    >
+                      <div className="w-9 h-9 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-600 dark:text-blue-400 text-sm font-bold uppercase ring-2 ring-blue-500/20">
+                        AD
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-sm font-semibold text-zinc-800 dark:text-zinc-200 truncate">Quản trị viên Hệ thống</span>
+                          <span className="text-[9px] bg-amber-500/10 text-amber-600 dark:text-amber-400 px-1.5 py-0.5 rounded font-black uppercase tracking-wider scale-90">ADMIN</span>
+                        </div>
+                        <span className="text-xs text-zinc-500 dark:text-zinc-400 block truncate mt-0.5">admin@gmail.com</span>
+                      </div>
+                    </button>
+
+                    {/* Account 2: tunganht26@gmail.com */}
+                    <button
+                      onClick={() => handleDirectGoogleLogin('tunganht26@gmail.com', 'Tung anh Trần')}
+                      className="w-full py-3.5 flex items-center gap-3.5 text-left hover:bg-zinc-50 dark:hover:bg-zinc-800/40 rounded-xl px-2.5 transition-colors cursor-pointer group"
+                    >
+                      <div className="w-9 h-9 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center text-emerald-600 dark:text-emerald-400 text-sm font-bold uppercase">
+                        TA
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <span className="text-sm font-semibold text-zinc-800 dark:text-zinc-200 truncate block">Tung anh Trần</span>
+                        <span className="text-xs text-zinc-500 dark:text-zinc-400 block truncate mt-0.5">tunganht26@gmail.com</span>
+                      </div>
+                    </button>
+
+                    {/* Account 3: tunganhqwqkawaii@gmail.com */}
+                    <button
+                      onClick={() => handleDirectGoogleLogin('tunganhqwqkawaii@gmail.com', 'Tung anh Trần')}
+                      className="w-full py-3.5 flex items-center gap-3.5 text-left hover:bg-zinc-50 dark:hover:bg-zinc-800/40 rounded-xl px-2.5 transition-colors cursor-pointer group"
+                    >
+                      <div className="w-9 h-9 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center text-purple-600 dark:text-purple-400 text-sm font-bold uppercase">
+                        TT
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <span className="text-sm font-semibold text-zinc-800 dark:text-zinc-200 truncate block">Tung anh Trần</span>
+                        <span className="text-xs text-zinc-500 dark:text-zinc-400 block truncate mt-0.5">tunganhqwqkawaii@gmail.com</span>
+                      </div>
+                    </button>
+
+                    {/* Account 4: tunganhtran178@gmail.com */}
+                    <button
+                      onClick={() => handleDirectGoogleLogin('tunganhtran178@gmail.com', 'Tunganh Tran')}
+                      className="w-full py-3.5 flex items-center gap-3.5 text-left hover:bg-zinc-50 dark:hover:bg-zinc-800/40 rounded-xl px-2.5 transition-colors cursor-pointer group"
+                    >
+                      <div className="w-9 h-9 rounded-full bg-rose-100 dark:bg-rose-900/30 flex items-center justify-center text-rose-600 dark:text-rose-400 text-sm font-bold uppercase">
+                        TR
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <span className="text-sm font-semibold text-zinc-800 dark:text-zinc-200 truncate block">Tunganh Tran</span>
+                        <span className="text-xs text-zinc-500 dark:text-zinc-400 block truncate mt-0.5">tunganhtran178@gmail.com</span>
+                      </div>
+                    </button>
+
+                    {/* Account 5: pekortran@gmail.com */}
+                    <button
+                      onClick={() => handleDirectGoogleLogin('pekortran@gmail.com', 'Pekor Trần')}
+                      className="w-full py-3.5 flex items-center gap-3.5 text-left hover:bg-zinc-50 dark:hover:bg-zinc-800/40 rounded-xl px-2.5 transition-colors cursor-pointer group"
+                    >
+                      <div className="w-9 h-9 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center text-amber-600 dark:text-amber-400 text-sm font-bold uppercase">
+                        PK
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <span className="text-sm font-semibold text-zinc-800 dark:text-zinc-200 truncate block">Pekor Trần</span>
+                        <span className="text-xs text-zinc-500 dark:text-zinc-400 block truncate mt-0.5">pekortran@gmail.com</span>
+                      </div>
+                    </button>
+
+                    {/* Account 6: tunganhtranvu5@gmail.com */}
+                    <button
+                      onClick={() => handleDirectGoogleLogin('tunganhtranvu5@gmail.com', 'Tran vu Tung Anh')}
+                      className="w-full py-3.5 flex items-center gap-3.5 text-left hover:bg-zinc-50 dark:hover:bg-zinc-800/40 rounded-xl px-2.5 transition-colors cursor-pointer group"
+                    >
+                      <div className="w-9 h-9 rounded-full bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center text-indigo-600 dark:text-indigo-400 text-sm font-bold uppercase">
+                        TV
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <span className="text-sm font-semibold text-zinc-800 dark:text-zinc-200 truncate block">Tran vu Tung Anh</span>
+                        <span className="text-xs text-zinc-500 dark:text-zinc-400 block truncate mt-0.5">tunganhtranvu5@gmail.com</span>
+                      </div>
+                    </button>
+
+                    {/* Account 7: ttunganh746@gmail.com */}
+                    <button
+                      onClick={() => handleDirectGoogleLogin('ttunganh746@gmail.com', 'Tran Tung Anh')}
+                      className="w-full py-3.5 flex items-center gap-3.5 text-left hover:bg-zinc-50 dark:hover:bg-zinc-800/40 rounded-xl px-2.5 transition-colors cursor-pointer group"
+                    >
+                      <div className="w-9 h-9 rounded-full bg-teal-100 dark:bg-teal-900/30 flex items-center justify-center text-teal-600 dark:text-teal-400 text-sm font-bold uppercase">
+                        TT
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <span className="text-sm font-semibold text-zinc-800 dark:text-zinc-200 truncate block">Tran Tung Anh</span>
+                        <span className="text-xs text-zinc-500 dark:text-zinc-400 block truncate mt-0.5">ttunganh746@gmail.com</span>
+                      </div>
+                    </button>
+
+                    {/* Option: Use another account */}
+                    <button
+                      onClick={() => setShowCustomInput(true)}
+                      className="w-full py-4 flex items-center gap-3.5 text-left hover:bg-zinc-50 dark:hover:bg-zinc-800/40 rounded-xl px-2.5 transition-colors cursor-pointer group text-blue-600 dark:text-blue-400 font-bold"
+                    >
+                      <div className="w-9 h-9 rounded-full bg-slate-100 dark:bg-zinc-800 flex items-center justify-center text-slate-500 dark:text-zinc-400">
+                        {/* Custom user icon */}
+                        <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+                          <circle cx="9" cy="7" r="4" />
+                          <line x1="19" y1="8" x2="19" y2="14" />
+                          <line x1="22" y1="11" x2="16" y2="11" />
+                        </svg>
+                      </div>
+                      <span className="text-sm">Use another account</span>
+                    </button>
+
+                  </div>
+                ) : (
+                  /* CUSTOM ACCOUNT MANUAL INPUT FORM */
+                  <form onSubmit={handleGoogleLoginSubmit} className="space-y-4 pt-2">
+                    <button
+                      type="button"
+                      onClick={() => setShowCustomInput(false)}
+                      className="flex items-center gap-1.5 text-xs font-bold text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200 mb-4 transition-colors cursor-pointer"
+                    >
+                      <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <line x1="19" y1="12" x2="5" y2="12" />
+                        <polyline points="12 19 5 12 12 5" />
+                      </svg>
+                      <span>Quay lại danh sách</span>
+                    </button>
+
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wide">Họ và Tên Google</label>
+                      <input
+                        type="text"
+                        value={googleName}
+                        onChange={(e) => setGoogleName(e.target.value)}
+                        placeholder="Nguyễn Văn A"
+                        className="w-full px-4 py-2.5 bg-slate-50 dark:bg-zinc-800/40 border border-slate-200 dark:border-zinc-800 rounded-xl text-xs font-bold focus:outline-none focus:border-blue-600 dark:text-white"
+                        required
+                      />
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wide">Email Google của bạn</label>
+                      <input
+                        type="email"
+                        value={googleEmail}
+                        onChange={(e) => setGoogleEmail(e.target.value)}
+                        placeholder="nguyenvana@gmail.com"
+                        className="w-full px-4 py-2.5 bg-slate-50 dark:bg-zinc-800/40 border border-slate-200 dark:border-zinc-800 rounded-xl text-xs font-bold focus:outline-none focus:border-blue-600 dark:text-white"
+                        required
+                      />
+                    </div>
+
+                    <button
+                      type="submit"
+                      className="w-full py-3.5 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-bold text-xs shadow-lg shadow-blue-500/10 active:scale-[0.98] transition-all cursor-pointer mt-4"
+                    >
+                      Xác thực & Đăng nhập Google
+                    </button>
+                  </form>
+                )}
+              </div>
+
+            </div>
+
+            {/* Footer */}
+            <div className="text-[11px] text-zinc-400 dark:text-zinc-500 leading-normal border-t border-slate-100 dark:border-zinc-800/60 p-6 bg-slate-50/50 dark:bg-zinc-900/50 flex flex-wrap gap-1 font-sans">
+              <span>Before using this app, you can review StuRelief's</span>
+              <a href="#" className="text-blue-600 dark:text-blue-400 hover:underline">Privacy Policy</a>
+              <span>and</span>
+              <a href="#" className="text-blue-600 dark:text-blue-400 hover:underline">Terms of Service</a>
+              <span>.</span>
+            </div>
+
+          </div>
+        </div>
+      )}
+    </main>
+  );
+}
