@@ -1,40 +1,255 @@
-import React from 'react';
-import Link from 'next/link';
-import { Sparkles, ArrowLeft, UserCheck } from 'lucide-react';
+'use client';
+
+import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { 
+  UserCheck, 
+  Search, 
+  X, 
+  ShieldAlert, 
+  ArrowLeft,
+  Sparkles
+} from 'lucide-react';
 import DashboardLayout from '@/layouts/dashboard/DashboardLayout';
+import { useAuthGuard } from '@/lib/hooks/useAuthGuard';
+import { UserRole, VerificationStatus, VERIFICATION_STATUS_LABELS, VERIFICATION_STATUS_CLASSES, APP_ROUTES } from '@shared';
+
+interface VerificationRequest {
+  id: string;
+  fullName: string;
+  email: string;
+  mssv: string;
+  campus: string;
+  cardImage: string;
+  status: 'PENDING' | 'APPROVED' | 'REJECTED';
+  date: string;
+}
 
 export default function ApprovalsPage() {
+  const router = useRouter();
+  const { currentUser, loading: authLoading } = useAuthGuard(UserRole.ADMIN);
+  const [verifySearch, setVerifySearch] = useState('');
+  const [selectedVerification, setSelectedVerification] = useState<VerificationRequest | null>(null);
+  const [verifications, setVerifications] = useState<VerificationRequest[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const fetchVerifications = async () => {
+    try {
+      setLoading(true);
+      const res = await fetch('/api/admin/verifications');
+      if (res.ok) {
+        const data = await res.json();
+        setVerifications(data);
+      }
+    } catch (err) {
+      console.error('Lỗi khi fetch verifications:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  React.useEffect(() => {
+    if (currentUser) {
+      fetchVerifications();
+    }
+  }, [currentUser]);
+
+  // Handle Verify Actions (Approve/Reject)
+  const handleVerifyRequest = async (id: string, action: 'APPROVED' | 'REJECTED') => {
+    try {
+      const res = await fetch('/api/admin/verifications', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, status: action }),
+      });
+
+      if (res.ok) {
+        setVerifications(prev => prev.map(req => req.id === id ? { ...req, status: action } : req));
+        setSelectedVerification(null);
+      }
+    } catch (err) {
+      console.error('Lỗi khi cập nhật trạng thái:', err);
+    }
+  };
+
+  const filteredVerifications = verifications.filter(v => 
+    v.fullName.toLowerCase().includes(verifySearch.toLowerCase()) ||
+    v.mssv.includes(verifySearch) ||
+    v.email.toLowerCase().includes(verifySearch.toLowerCase())
+  );
+
+  if (authLoading || loading) {
+    return (
+      <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 flex flex-col items-center justify-center p-6">
+        <UserCheck className="w-12 h-12 text-blue-600 animate-pulse mb-4" />
+        <span className="text-zinc-500 font-medium text-sm">Đang tải phân hệ kiểm duyệt sinh viên...</span>
+      </div>
+    );
+  }
+
   return (
-    <DashboardLayout activeItemId="approvals" pageTitle="Xác Thực Thẻ SV">
-      <div className="flex-1 flex flex-col items-center justify-center min-h-[60vh] px-4 text-center">
-        <div className="relative mb-6">
-          {/* Decorative glowing background */}
-          <div className="absolute inset-0 bg-blue-500/10 rounded-full blur-2xl animate-pulse scale-125" />
+    <DashboardLayout activeItemId="approvals" pageTitle="Xác Thực Thẻ Sinh Viên">
+      <div className="space-y-6">
+        
+        {/* Breadcrumb back to dashboard */}
+        <div className="flex items-center justify-between">
+          <button 
+            onClick={() => router.push(APP_ROUTES.ADMIN.DASHBOARD)} 
+            className="flex items-center gap-1.5 text-xs text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors cursor-pointer font-medium"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            <span>Quay lại Dashboard Tổng Quan</span>
+          </button>
           
-          <div className="relative w-20 h-20 rounded-3xl bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800/50 flex items-center justify-center text-blue-600 dark:text-blue-400 shadow-md">
-            <UserCheck className="w-10 h-10 text-blue-600 dark:text-blue-500" />
-          </div>
-          
-          <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-amber-500 flex items-center justify-center text-white border-2 border-white dark:border-[#0b0f13] shadow-sm">
-            <Sparkles className="w-3.5 h-3.5" />
+          <div className="text-[11px] text-zinc-400 font-medium bg-zinc-100 dark:bg-zinc-800 px-3 py-1.5 rounded-full flex items-center gap-1">
+            <Sparkles className="w-3 h-3 text-amber-500" />
+            <span>Yêu cầu mới: {verifications.filter(v => v.status === 'PENDING').length}</span>
           </div>
         </div>
 
-        <h1 className="text-2xl font-medium tracking-tight text-zinc-950 dark:text-white mb-2">
-          Tính Năng Đang Phát Triển
-        </h1>
-        <p className="text-zinc-500 dark:text-zinc-400 text-sm max-w-sm leading-relaxed mb-8">
-          Chúng tôi đang tích cực xây dựng phân hệ <span className="font-medium text-zinc-800 dark:text-zinc-200">Phê duyệt thẻ sinh viên</span> này. Trải nghiệm tuyệt vời sẽ sớm ra mắt!
-        </p>
+        {/* Content Box */}
+        <div className="bg-white dark:bg-zinc-900 rounded-3xl border border-zinc-200/80 dark:border-zinc-800/60 p-6 sm:p-8 shadow-sm">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+            <div>
+              <h3 className="text-base font-semibold">Xét duyệt thẻ sinh viên & Email trường</h3>
+              <p className="text-[11px] text-zinc-400 mt-1">Duyệt danh tính sinh viên để đảm bảo an toàn giao dịch nội bộ trường học.</p>
+            </div>
+            
+            {/* Search Box */}
+            <div className="relative w-full sm:w-72">
+              <Search className="w-4 h-4 absolute left-3.5 top-3 text-zinc-400" />
+              <input
+                type="text"
+                placeholder="Tìm tên, MSSV, Email..."
+                value={verifySearch}
+                onChange={(e) => setVerifySearch(e.target.value)}
+                className="w-full pl-10 pr-4 py-2 bg-zinc-50 dark:bg-zinc-800/40 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-medium focus:outline-none focus:border-blue-600 dark:focus:border-blue-500 transition-colors"
+              />
+            </div>
+          </div>
 
-        <Link 
-          href="/admin" 
-          className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 active:scale-98 text-white px-5 py-2.5 rounded-xl text-xs font-medium shadow-md shadow-blue-500/10 transition-all cursor-pointer"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          <span>Quay lại Dashboard</span>
-        </Link>
+          {/* Verifications list table */}
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="border-b border-zinc-200 dark:border-zinc-800 text-[11px] font-semibold text-zinc-400 uppercase tracking-widest">
+                  <th className="py-3 px-4">Sinh viên</th>
+                  <th className="py-3 px-4">Mã số sinh viên (MSSV)</th>
+                  <th className="py-3 px-4">Cơ sở trường</th>
+                  <th className="py-3 px-4">Trạng thái</th>
+                  <th className="py-3 px-4 text-right">Hành động</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredVerifications.map((req) => (
+                  <tr key={req.id} className="border-b border-zinc-100 dark:border-zinc-800/40 text-xs hover:bg-zinc-50 dark:hover:bg-zinc-800/25 transition-colors">
+                    <td className="py-4 px-4">
+                      <div className="flex flex-col">
+                        <span className="font-medium text-zinc-900 dark:text-white">{req.fullName}</span>
+                        <span className="text-[10px] text-zinc-400 mt-0.5">{req.email}</span>
+                      </div>
+                    </td>
+                    <td className="py-4 px-4 font-medium">{req.mssv}</td>
+                    <td className="py-4 px-4 font-medium text-zinc-500 dark:text-zinc-400">{req.campus}</td>
+                    <td className="py-4 px-4">
+                      <span className={`px-2.5 py-1 rounded-full text-[10px] font-medium uppercase ${VERIFICATION_STATUS_CLASSES[req.status as VerificationStatus]}`}>
+                        {VERIFICATION_STATUS_LABELS[req.status as VerificationStatus]}
+                      </span>
+                    </td>
+                    <td className="py-4 px-4 text-right">
+                      <button
+                        onClick={() => setSelectedVerification(req)}
+                        className="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium text-[11px] cursor-pointer shadow-sm transition-all"
+                      >
+                        Chi tiết
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+                {filteredVerifications.length === 0 && (
+                  <tr>
+                    <td colSpan={5} className="py-12 text-center text-xs text-zinc-400">
+                      Không tìm thấy yêu cầu xác thực nào phù hợp.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
       </div>
+
+      {/* STUDENT CARD VERIFICATION MODAL POPUP */}
+      {selectedVerification && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="relative bg-white dark:bg-zinc-900 w-full max-w-lg rounded-3xl overflow-hidden shadow-2xl border border-zinc-200 dark:border-zinc-800 animate-scale-up max-h-[90vh] overflow-y-auto">
+            
+            <div className="p-6 border-b border-zinc-100 dark:border-zinc-800/60 flex items-center justify-between">
+              <div className="flex flex-col">
+                <h3 className="text-base font-semibold text-zinc-900 dark:text-white">Chi tiết Thẻ Sinh Viên</h3>
+              </div>
+              <button 
+                onClick={() => setSelectedVerification(null)}
+                className="p-1.5 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-400 rounded-lg cursor-pointer transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-6">
+              
+              {/* Photo Display Card */}
+              <div className="relative h-56 w-full bg-zinc-100 dark:bg-zinc-800 rounded-2xl overflow-hidden border border-zinc-200/50 dark:border-zinc-700">
+                <img
+                  src={selectedVerification.cardImage}
+                  alt="Thẻ sinh viên"
+                  className="w-full h-full object-cover"
+                />
+              </div>
+
+              {/* Data fields */}
+              <div className="grid grid-cols-2 gap-4 text-xs">
+                <div className="bg-zinc-50 dark:bg-zinc-800/40 p-3.5 rounded-xl">
+                  <span className="text-[10px] text-zinc-400 uppercase font-medium tracking-wider">Họ và tên</span>
+                  <p className="font-medium text-zinc-950 dark:text-white mt-0.5">{selectedVerification.fullName}</p>
+                </div>
+                <div className="bg-zinc-50 dark:bg-zinc-800/40 p-3.5 rounded-xl">
+                  <span className="text-[10px] text-zinc-400 uppercase font-medium tracking-wider">Mã số sinh viên (MSSV)</span>
+                  <p className="font-medium text-zinc-950 dark:text-white mt-0.5">{selectedVerification.mssv}</p>
+                </div>
+                <div className="bg-zinc-50 dark:bg-zinc-800/40 p-3.5 rounded-xl">
+                  <span className="text-[10px] text-zinc-400 uppercase font-medium tracking-wider">Email trường cấp</span>
+                  <p className="font-medium text-zinc-950 dark:text-white mt-0.5 truncate">{selectedVerification.email}</p>
+                </div>
+                <div className="bg-zinc-50 dark:bg-zinc-800/40 p-3.5 rounded-xl">
+                  <span className="text-[10px] text-zinc-400 uppercase font-medium tracking-wider">Cơ sở (Campus)</span>
+                  <p className="font-medium text-zinc-950 dark:text-white mt-0.5">{selectedVerification.campus}</p>
+                </div>
+              </div>
+
+              {/* Actions */}
+              {selectedVerification.status === 'PENDING' && (
+                <div className="grid grid-cols-2 gap-4 border-t border-zinc-100 dark:border-zinc-800/60 pt-6">
+                  <button
+                    onClick={() => handleVerifyRequest(selectedVerification.id, 'REJECTED')}
+                    className="py-3 border border-rose-500/20 hover:bg-rose-500/5 text-rose-500 text-xs font-semibold rounded-2xl cursor-pointer transition-colors"
+                  >
+                    Từ chối hồ sơ
+                  </button>
+                  <button
+                    onClick={() => handleVerifyRequest(selectedVerification.id, 'APPROVED')}
+                    className="py-3 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-2xl cursor-pointer transition-colors shadow-md shadow-blue-500/10"
+                  >
+                    Duyệt hoạt động
+                  </button>
+                </div>
+              )}
+
+            </div>
+
+          </div>
+        </div>
+      )}
     </DashboardLayout>
   );
 }

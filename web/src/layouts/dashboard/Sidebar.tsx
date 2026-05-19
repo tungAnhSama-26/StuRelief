@@ -6,6 +6,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import { HeartHandshake, ChevronLeft } from 'lucide-react';
 import { getMenuGroups } from './sidebar/menuConfig';
 import ProfileFooter from './sidebar/ProfileFooter';
+import { UserRole } from '@shared';
 
 interface SidebarProps {
   activeItem?: string;
@@ -17,7 +18,7 @@ interface SidebarProps {
 export default function Sidebar({ activeItem, isCollapsed = false, onToggleCollapse, onCloseMobile }: SidebarProps) {
   const router = useRouter();
   const pathname = usePathname();
-  const [currentUser, setCurrentUser] = useState<{ id: string; email: string; role: 'STUDENT' | 'ADMIN'; fullName: string; avatarUrl?: string | null } | null>(null);
+  const [currentUser, setCurrentUser] = useState<{ id: string; email: string; role: UserRole; fullName: string; avatarUrl?: string | null } | null>(null);
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -34,7 +35,7 @@ export default function Sidebar({ activeItem, isCollapsed = false, onToggleColla
     fetchUser();
   }, []);
 
-  const activeRole = currentUser?.role || 'STUDENT';
+  const activeRole = currentUser?.role || UserRole.STUDENT;
   const menuItems = getMenuGroups(activeRole).flatMap((group) => group.items);
 
   const handleLogout = async () => {

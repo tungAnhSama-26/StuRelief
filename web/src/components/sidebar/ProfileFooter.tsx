@@ -3,11 +3,12 @@
 import React from 'react';
 import Link from 'next/link';
 import { LogOut, User } from 'lucide-react';
+import { UserRole } from '@shared';
 
 interface UserSession {
   id: string;
   email: string;
-  role: 'STUDENT' | 'ADMIN';
+  role: UserRole;
   fullName: string;
   avatarUrl?: string | null;
 }

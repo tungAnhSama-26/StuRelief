@@ -6,6 +6,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import { HeartHandshake, ChevronLeft } from 'lucide-react';
 import { getMenuGroups } from './sidebar/menuConfig';
 import ProfileFooter from './sidebar/ProfileFooter';
+import { UserRole } from '@shared';
 
 interface SidebarProps {
   activeItem?: string;
@@ -22,7 +23,7 @@ export default function Sidebar({
 }: SidebarProps) {
   const router = useRouter();
   const pathname = usePathname();
-  const [currentUser, setCurrentUser] = useState<{ id: string; email: string; role: 'STUDENT' | 'ADMIN'; fullName: string; avatarUrl?: string | null } | null>(null);
+  const [currentUser, setCurrentUser] = useState<{ id: string; email: string; role: UserRole; fullName: string; avatarUrl?: string | null } | null>(null);
   const [loading, setLoading] = useState(true);
 
   // Sync user status on mount
@@ -45,7 +46,7 @@ export default function Sidebar({
     fetchUser();
   }, []);
 
-  const activeRole = currentUser?.role || 'STUDENT';
+  const activeRole = currentUser?.role || UserRole.STUDENT;
 
   const handleLogout = async () => {
     try {

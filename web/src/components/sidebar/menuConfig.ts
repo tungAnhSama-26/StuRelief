@@ -1,11 +1,6 @@
 import {
   Compass,
   FileBadge,
-  Tags,
-  BookmarkCheck,
-  MapPin,
-  AlertTriangle,
-  MessageSquare,
   UserCheck,
   Activity,
   Scale,
@@ -13,6 +8,7 @@ import {
   Map,
   LucideIcon
 } from 'lucide-react';
+import { APP_ROUTES, UserRole } from '@shared';
 
 export interface MenuItem {
   id: string;
@@ -27,7 +23,7 @@ export interface MenuGroup {
   items: MenuItem[];
 }
 
-export const getMenuGroups = (role: 'STUDENT' | 'ADMIN'): MenuGroup[] => {
+export const getMenuGroups = (role: UserRole): MenuGroup[] => {
   const userGroups: MenuGroup[] = [
     {
       title: 'Mua Bán & Trao Đổi',
@@ -37,14 +33,14 @@ export const getMenuGroups = (role: 'STUDENT' | 'ADMIN'): MenuGroup[] => {
           label: 'Chợ Đồ Cũ Sinh Viên',
           icon: Compass,
           desc: 'Duyệt đồ dùng học tập (BL-CT-02)',
-          path: '/',
+          path: APP_ROUTES.HOME,
         },
         {
           id: 'verification',
           label: 'Xác Thực Sinh Viên',
           icon: FileBadge,
           desc: 'Xác thực thẻ & email trường (BL-ID-01)',
-          path: '/verification',
+          path: APP_ROUTES.VERIFICATION,
         },
       ],
     },
@@ -59,39 +55,46 @@ export const getMenuGroups = (role: 'STUDENT' | 'ADMIN'): MenuGroup[] => {
           label: 'Dashboard Tổng Quan',
           icon: Activity,
           desc: 'Chỉ số sức khỏe hệ thống',
-          path: '/admin',
+          path: APP_ROUTES.ADMIN.DASHBOARD,
         },
         {
           id: 'approvals',
           label: 'Xác Thực Thẻ SV',
           icon: UserCheck,
           desc: 'Phê duyệt thẻ sinh viên (BL-ID-01)',
-          path: '/admin/approvals',
+          path: APP_ROUTES.ADMIN.APPROVALS,
+        },
+        {
+          id: 'handovers',
+          label: 'Bàn Giao & Bằng Chứng',
+          icon: FileBadge,
+          desc: 'Quản lý bằng chứng giao nhận (ST-09)',
+          path: '/admin/handovers',
         },
         {
           id: 'disputes',
           label: 'Xử Lý Tranh Chấp',
           icon: Scale,
           desc: 'Giải quyết khiếu nại (ST-10/11)',
-          path: '/admin/disputes',
+          path: APP_ROUTES.ADMIN.DISPUTES,
         },
         {
           id: 'audit-logs',
           label: 'Lịch Sử Hoạt Động',
           icon: History,
           desc: 'Xem Activity Log hệ thống (BL-AD-12)',
-          path: '/admin/logs',
+          path: APP_ROUTES.ADMIN.LOGS,
         },
         {
           id: 'meeting-points',
           label: 'Điểm Hẹn An Toàn',
           icon: Map,
           desc: 'Thiết lập Hub an toàn (ST-07)',
-          path: '/admin/meeting-points',
+          path: APP_ROUTES.ADMIN.MEETING_POINTS,
         },
       ],
     },
   ];
 
-  return role === 'ADMIN' ? [...userGroups, ...adminGroups] : userGroups;
+  return role === UserRole.ADMIN ? [...userGroups, ...adminGroups] : userGroups;
 };

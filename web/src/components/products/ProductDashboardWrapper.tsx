@@ -8,8 +8,6 @@ import SearchAndFilter from './SearchAndFilter';
 import ImageUpload from './ImageUpload';
 import { Check, AlertCircle, PackageOpen, X, MessageSquare, Trash2 } from 'lucide-react';
 
-const CURRENT_MOCK_USER_ID = 'student-user-current';
-
 interface ProductDashboardWrapperProps {
   initialItems: Item[];
   total: number;
@@ -81,7 +79,7 @@ const ProductDashboardWrapper: React.FC<ProductDashboardWrapperProps> = ({
 
   const displayedItems = activeTab === 'all'
     ? items
-    : items.filter((item) => item.studentId === (currentUser?.id || CURRENT_MOCK_USER_ID));
+    : items.filter((item) => currentUser && item.studentId === currentUser.id);
 
   const handleOpenCreate = () => {
     if (!currentUser) {
@@ -99,6 +97,7 @@ const ProductDashboardWrapper: React.FC<ProductDashboardWrapperProps> = ({
 
   const handleCreateSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!currentUser) return;
     if (!formName.trim()) {
       showFeedback('Tên sản phẩm không được để trống!', 'error');
       return;
@@ -118,7 +117,7 @@ const ProductDashboardWrapper: React.FC<ProductDashboardWrapperProps> = ({
           category: formCategory,
           description: formDescription,
           images: [formImage || 'https://images.unsplash.com/photo-1543002588-bfa74002ed7e?q=80&w=400&auto=format&fit=crop'],
-          studentId: currentUser?.id || CURRENT_MOCK_USER_ID,
+          studentId: currentUser.id,
         }),
       });
 
@@ -197,7 +196,7 @@ const ProductDashboardWrapper: React.FC<ProductDashboardWrapperProps> = ({
 
       setItems(items.filter((item) => item.id !== selectedProduct.id));
       setTotalCount((prev) => prev - 1);
-      if (selectedProduct.studentId === CURRENT_MOCK_USER_ID) {
+      if (currentUser && selectedProduct.studentId === currentUser.id) {
         setMyTotalCount((prev) => prev - 1);
       }
       setIsDeleteOpen(false);

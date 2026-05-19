@@ -1,29 +1,17 @@
 import { Item, CreateItemDTO as PostItemDTO, UpdateItemDTO } from '@shared/domain/Item';
 import { IItemRepository } from '@shared/domain/IItemRepository';
+import { ItemSpecification } from '@/domain/repositories/ItemSpecification';
 import prisma from '@/lib/prisma';
 
 export class PrismaItemRepository implements IItemRepository {
   async findAll(
     page: number,
     limit: number,
-    filters?: { search?: string; category?: string }
+    specification?: ItemSpecification
   ): Promise<{ items: Item[]; total: number }> {
     const skip = (page - 1) * limit;
 
-    const where: any = {};
-
-    if (filters?.search) {
-      where.OR = [
-        { name: { contains: filters.search, mode: 'insensitive' } },
-        { description: { contains: filters.search, mode: 'insensitive' } },
-      ];
-    }
-
-    if (filters?.category && filters.category !== 'Tất cả danh mục' && filters.category !== 'All') {
-      where.category = {
-        name: { equals: filters.category, mode: 'insensitive' },
-      };
-    }
+    const where = specification ? specification.toPrismaWhere() : {};
 
     const [products, total] = await Promise.all([
       prisma.product.findMany({

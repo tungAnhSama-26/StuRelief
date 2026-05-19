@@ -47,7 +47,7 @@ export async function POST(request: Request) {
         email,
         password: hashedPassword,
         role: role.toUpperCase() === 'ADMIN' ? 'ADMIN' : 'STUDENT',
-        status: 'VERIFIED', // Xác thực ngay để tiện trải nghiệm
+        status: 'UNVERIFIED',
         profile: {
           create: {
             fullName,

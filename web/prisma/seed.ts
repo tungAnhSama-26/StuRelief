@@ -11,15 +11,32 @@ async function main() {
 
   // 1. CLEAR DỮ LIỆU CŨ (Để tránh trùng lặp khi chạy lại)
   console.log('[CLEANUP] Đang làm sạch dữ liệu cũ...');
+  await prisma.disputeEvidence.deleteMany({});
+  await prisma.disputeCase.deleteMany({});
+  await prisma.reviewAttribute.deleteMany({});
+  await prisma.review.deleteMany({});
+  await prisma.reputationRecord.deleteMany({});
   await prisma.notification.deleteMany({});
   await prisma.message.deleteMany({});
   await prisma.conversationMember.deleteMany({});
   await prisma.conversation.deleteMany({});
+  await prisma.escrowSession.deleteMany({});
+  await prisma.orderEvidence.deleteMany({});
+  await prisma.orderStatusLog.deleteMany({});
   await prisma.order.deleteMany({});
+  await prisma.productReservation.deleteMany({});
+  await prisma.productSnapshot.deleteMany({});
   await prisma.productMedia.deleteMany({});
+  await prisma.productAttribute.deleteMany({});
+  await prisma.priceHistory.deleteMany({});
+  await prisma.tradeOffer.deleteMany({});
   await prisma.product.deleteMany({});
+  await prisma.categoryAttributeTemplate.deleteMany({});
   await prisma.category.deleteMany({});
+  await prisma.verificationRequest.deleteMany({});
   await prisma.studentProfile.deleteMany({});
+  await prisma.userTrustNetwork.deleteMany({});
+  await prisma.follow.deleteMany({});
   await prisma.user.deleteMany({});
   await prisma.meetingPoint.deleteMany({});
   await prisma.campus.deleteMany({});
@@ -94,18 +111,193 @@ async function main() {
   }
 
   // 6. ORDERS (5+)
-  console.log('[DATA] Seeding Orders...');
-  for (let i = 0; i < 7; i++) {
-    await prisma.order.create({
+  console.log('[DATA] Seeding Orders & Disputes...');
+  
+  // Seed normal success orders
+  const successOrders = [];
+  for (let i = 0; i < 5; i++) {
+    const o = await prisma.order.create({
       data: {
         productId: productIds[i],
-        buyerId: userIds[(i + 5) % userIds.length],
+        buyerId: userIds[(i + 2) % userIds.length],
         sellerId: userIds[i % userIds.length],
         finalPrice: 100000,
         status: OrderStatus.SUCCESS,
       },
     });
+    successOrders.push(o);
   }
+
+  // Seed reviews and reputation
+  console.log('[DATA] Seeding Reviews & Reputation...');
+  const reviewComments = [
+    'Sản phẩm rất tốt, đúng như mô tả, đóng gói cẩn thận!',
+    'Giao dịch nhanh chóng tại Điểm hẹn an toàn, người bán nhiệt tình.',
+    'Máy chạy mượt mà, tuy nhiên hơi bám vân tay một chút.',
+    'Giá cả rất sinh viên, chất lượng ngoài mong đợi.',
+    'Dùng ổn định, hỗ trợ cài đặt phần mềm rất chu đáo!'
+  ];
+
+  for (let i = 0; i < successOrders.length; i++) {
+    const order = successOrders[i];
+    await prisma.review.create({
+      data: {
+        orderId: order.id,
+        reviewerId: order.buyerId,
+        reviewedId: order.sellerId,
+        rating: 5 - (i % 2), // 5, 4, 5, 4, 5 stars
+        body: reviewComments[i]
+      }
+    });
+
+    await prisma.reputationRecord.create({
+      data: {
+        userId: order.sellerId,
+        delta: 10,
+        actionType: 'TRANSACTION_SUCCESS',
+        referenceId: order.id,
+        note: `Hoàn tất giao dịch thành công mã đơn #${order.id}`
+      }
+    });
+
+    await prisma.reputationRecord.create({
+      data: {
+        userId: order.sellerId,
+        delta: 5,
+        actionType: 'REPUTABLE_FEEDBACK',
+        referenceId: order.id,
+        note: `Nhận đánh giá tích cực từ giao dịch mã đơn #${order.id}`
+      }
+    });
+
+    await prisma.user.update({
+      where: { id: order.sellerId },
+      data: {
+        reputationScore: {
+          increment: 15
+        }
+      }
+    });
+  }
+
+  // Seed custom products for disputes
+  const buyerId = userIds[2]; // student1
+  const sellerId = userIds[3]; // student2
+
+  const disputeProduct1 = await prisma.product.create({
+    data: {
+      name: 'Laptop Dell XPS 13 9310',
+      description: 'Máy mỏng nhẹ, pin tốt, RAM 8GB. Thích hợp văn phòng.',
+      currentPrice: 12500000,
+      status: 'RESERVED',
+      condition: 'USED_GOOD',
+      sellerId: sellerId,
+      categoryId: categoryIds['others'] || Object.values(categoryIds)[0],
+      media: { create: { url: 'https://images.unsplash.com/photo-1593642632823-8f785ba67e45?q=80&w=400&auto=format&fit=crop', isPrimary: true } },
+    }
+  });
+
+  // Original product snapshot (16GB RAM before seller changed it)
+  await prisma.productSnapshot.create({
+    data: {
+      productId: disputeProduct1.id,
+      versionName: 'ORIGINAL_DEAL',
+      data: {
+        name: 'Laptop Dell XPS 13 9310 (Mô tả gốc lúc mua)',
+        price: 12500000,
+        description: 'Dell XPS cấu hình cực mạnh, RAM 16GB thoải mái code và thiết kế đồ họa.',
+        condition: 'USED_LIKE_NEW',
+        ram: '16GB',
+        cpu: 'Intel Core i7'
+      }
+    }
+  });
+
+  const disputeOrder1 = await prisma.order.create({
+    data: {
+      productId: disputeProduct1.id,
+      buyerId: buyerId,
+      sellerId: sellerId,
+      finalPrice: 12500000,
+      status: OrderStatus.DISPUTED,
+      paymentType: 'ESCROW'
+    }
+  });
+
+  const disputeCase1 = await prisma.disputeCase.create({
+    data: {
+      orderId: disputeOrder1.id,
+      initiatorId: buyerId,
+      reason: 'Người bán tự ý thay đổi RAM từ 16GB xuống 8GB sau khi tôi đặt cọc giữ chỗ và tráo linh kiện khi bàn giao.',
+      status: 'PENDING'
+    }
+  });
+
+  await prisma.disputeEvidence.create({
+    data: {
+      disputeCaseId: disputeCase1.id,
+      url: 'https://images.unsplash.com/photo-1588872657578-7efd1f1555ed?q=80&w=400&auto=format&fit=crop',
+      description: 'Ảnh chụp cấu hình máy thực tế hiển thị trong phần Settings chỉ có 8GB RAM.'
+    }
+  });
+
+  // Second Dispute Case (Investigating)
+  const buyerId2 = userIds[4];
+  const sellerId2 = userIds[5];
+
+  const disputeProduct2 = await prisma.product.create({
+    data: {
+      name: 'iPad Air 4 Wifi 64GB',
+      description: 'Máy dùng tốt mượt mà. (Có nứt nhẹ kính góc)',
+      currentPrice: 7900000,
+      status: 'RESERVED',
+      condition: 'USED_FAIR',
+      sellerId: sellerId2,
+      categoryId: categoryIds['others'] || Object.values(categoryIds)[0],
+      media: { create: { url: 'https://images.unsplash.com/photo-1544244015-0df4b3ffc6b0?q=80&w=400&auto=format&fit=crop', isPrimary: true } },
+    }
+  });
+
+  await prisma.productSnapshot.create({
+    data: {
+      productId: disputeProduct2.id,
+      versionName: 'ORIGINAL_DEAL',
+      data: {
+        name: 'iPad Air 4 Wifi 64GB',
+        price: 7900000,
+        description: 'iPad đẹp keng 99%, không xước sát, không cấn móp, đầy đủ sạc cáp zin.',
+        condition: 'USED_LIKE_NEW'
+      }
+    }
+  });
+
+  const disputeOrder2 = await prisma.order.create({
+    data: {
+      productId: disputeProduct2.id,
+      buyerId: buyerId2,
+      sellerId: sellerId2,
+      finalPrice: 7900000,
+      status: OrderStatus.DISPUTED,
+      paymentType: 'ESCROW'
+    }
+  });
+
+  const disputeCase2 = await prisma.disputeCase.create({
+    data: {
+      orderId: disputeOrder2.id,
+      initiatorId: buyerId2,
+      reason: 'Sản phẩm nhận được bị nứt góc màn hình lớn nhưng mô tả tin đăng ghi không trầy xước.',
+      status: 'INVESTIGATING'
+    }
+  });
+
+  await prisma.disputeEvidence.create({
+    data: {
+      disputeCaseId: disputeCase2.id,
+      url: 'https://images.unsplash.com/photo-1544244015-0df4b3ffc6b0?q=80&w=400&auto=format&fit=crop',
+      description: 'Ảnh chụp màn hình iPad bị nứt kính sâu ở góc phải.'
+    }
+  });
 
 
   // 7. NOTIFICATIONS (5+)

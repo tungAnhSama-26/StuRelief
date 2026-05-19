@@ -1,10 +1,13 @@
 import { Suspense } from 'react';
 import Link from 'next/link';
+import { cookies } from 'next/headers';
 import { PrismaItemRepository } from '@/infrastructure/persistence/PrismaItemRepository';
 import { GetItemsUseCase } from '@/use-cases/items/GetItemsUseCase';
 import ProductDashboardWrapper from '@/components/products/ProductDashboardWrapper';
 import DashboardLayout from '@/layouts/dashboard/DashboardLayout';
 import prisma from '@/lib/prisma';
+import { verifyToken } from '@/lib/jwt';
+import { env } from '@/infrastructure/config/env';
 import { ChevronLeft, ChevronRight, Sparkles, ArrowUpRight, ShieldCheck, Zap, TrendingUp, MessageSquare } from 'lucide-react';
 
 interface SearchParams {
@@ -28,6 +31,12 @@ export default async function Home({
   const search = params.search || undefined;
   const category = params.category || undefined;
 
+  // Get current user from cookie
+  const cookieStore = await cookies();
+  const token = cookieStore.get('token')?.value;
+  const currentUser = token ? verifyToken(token, env.JWT_SECRET) : null;
+  const currentUserId = currentUser?.id || 'guest';
+
   const { items, total } = await getItemsUseCase.execute(page, limit, { search, category });
   const totalPages = Math.ceil(total / limit);
 
@@ -42,12 +51,12 @@ export default async function Home({
     where: { status: 'AVAILABLE' },
   });
 
-  const myProductsCount = await prisma.product.count({
+  const myProductsCount = currentUser ? await prisma.product.count({
     where: {
       status: 'AVAILABLE',
-      sellerId: 'student-user-current',
+      sellerId: currentUserId,
     },
-  });
+  }) : 0;
 
   // Generate page numbers list for premium pagination
   const getPageNumbers = (current: number, total: number) => {

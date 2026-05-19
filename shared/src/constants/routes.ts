@@ -1,0 +1,34 @@
+/**
+ * Application Routes Configuration
+ * Avoids hardcoding string paths across the codebase.
+ */
+export const APP_ROUTES = {
+  HOME: '/',
+  LOGIN: '/login',
+  VERIFICATION: '/verification',
+  
+  ADMIN: {
+    DASHBOARD: '/admin',
+    APPROVALS: '/admin/approvals',
+    DISPUTES: '/admin/disputes',
+    LOGS: '/admin/logs',
+    MEETING_POINTS: '/admin/meeting-points',
+    REPUTATION: '/admin/reputations',
+  }
+} as const;
+
+/**
+ * API Endpoint Configuration
+ * Avoids hardcoding endpoint paths across the codebase.
+ */
+export const API_ROUTES = {
+  AUTH: {
+    ME: '/api/auth/me',
+    LOGIN: '/api/auth/login',
+    LOGOUT: '/api/auth/logout',
+    GOOGLE: '/api/auth/google',
+  }
+} as const;
+
+export type AppRouteType = typeof APP_ROUTES;
+export type ApiRouteType = typeof API_ROUTES;
