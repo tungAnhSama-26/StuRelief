@@ -195,12 +195,12 @@ export default function HandoversPage() {
 
         {/* Detail Sidebar / Modal */}
         {selectedHandover && (
-          <div className="fixed inset-0 z-50 flex items-center justify-end bg-zinc-950/40 backdrop-blur-sm animate-in fade-in duration-300">
+          <div className="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center bg-zinc-950/40 backdrop-blur-sm animate-in fade-in duration-300 p-4">
             <div 
               className="absolute inset-0" 
               onClick={() => setSelectedHandover(null)}
             />
-            <div className="relative w-full max-w-2xl h-full bg-white dark:bg-zinc-950 shadow-2xl overflow-y-auto animate-in slide-in-from-right duration-500">
+            <div className="relative w-full max-w-4xl max-h-[90vh] bg-white dark:bg-zinc-950 shadow-2xl overflow-y-auto rounded-3xl border border-zinc-200 dark:border-zinc-800 animate-in zoom-in-95 duration-300">
               
               {/* Header */}
               <div className="sticky top-0 z-10 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-md p-6 border-b border-zinc-100 dark:border-zinc-800 flex items-center justify-between">

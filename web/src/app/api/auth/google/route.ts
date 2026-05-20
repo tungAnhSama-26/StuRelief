@@ -246,6 +246,6 @@ async function registerOrLoginGoogleUser(email: string, fullName: string, avatar
     email: user.email,
     role: user.role,
     fullName: user.profile?.fullName || user.email.split('@')[0],
-    avatarUrl: user.role === 'ADMIN' ? null : user.profile?.avatarUrl || null,
+    avatarUrl: user.profile?.avatarUrl || null,
   };
 }

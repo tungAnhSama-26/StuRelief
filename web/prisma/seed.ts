@@ -3,6 +3,7 @@ import { universities } from './data/universities';
 import { categories } from './data/categories';
 import { users } from './data/users';
 import { products } from './data/products';
+import { aiImageUrl } from '../src/lib/aiImage';
 
 const prisma = new PrismaClient();
 
@@ -16,6 +17,7 @@ async function main() {
   await prisma.reviewAttribute.deleteMany({});
   await prisma.review.deleteMany({});
   await prisma.reputationRecord.deleteMany({});
+  await prisma.activityLog.deleteMany({});
   await prisma.notification.deleteMany({});
   await prisma.message.deleteMany({});
   await prisma.conversationMember.deleteMany({});
@@ -104,7 +106,15 @@ async function main() {
         condition: p.condition,
         sellerId: userIds[i % userIds.length],
         categoryId: categoryIds[p.cat] || categoryIds['others'],
-        media: { create: { url: 'https://via.placeholder.com/400x300', isPrimary: true } },
+        media: {
+          create: {
+            url: aiImageUrl(
+              `realistic AI marketplace product photo of ${p.name}, student resale listing, clean studio background, natural light`,
+              { width: 400, height: 300, seed: `seed-${p.cat}-${i}` }
+            ),
+            isPrimary: true,
+          },
+        },
       },
     });
     productIds.push(created.id);
@@ -193,7 +203,15 @@ async function main() {
       condition: 'USED_GOOD',
       sellerId: sellerId,
       categoryId: categoryIds['others'] || Object.values(categoryIds)[0],
-      media: { create: { url: 'https://images.unsplash.com/photo-1593642632823-8f785ba67e45?q=80&w=400&auto=format&fit=crop', isPrimary: true } },
+      media: {
+        create: {
+          url: aiImageUrl(
+            'realistic AI photo of a Dell XPS 13 laptop on a desk, premium student marketplace product photo, clean lighting',
+            { width: 400, height: 300, seed: 'dispute-dell-xps-13' }
+          ),
+          isPrimary: true,
+        },
+      },
     }
   });
 
@@ -236,7 +254,10 @@ async function main() {
   await prisma.disputeEvidence.create({
     data: {
       disputeCaseId: disputeCase1.id,
-      url: 'https://images.unsplash.com/photo-1588872657578-7efd1f1555ed?q=80&w=400&auto=format&fit=crop',
+      url: aiImageUrl(
+        'realistic AI documentary photo of a laptop system settings screen showing 8GB RAM, evidence photo, believable on-screen text',
+        { width: 400, height: 300, seed: 'dispute-evidence-8gb' }
+      ),
       description: 'Ảnh chụp cấu hình máy thực tế hiển thị trong phần Settings chỉ có 8GB RAM.'
     }
   });
@@ -254,7 +275,15 @@ async function main() {
       condition: 'USED_FAIR',
       sellerId: sellerId2,
       categoryId: categoryIds['others'] || Object.values(categoryIds)[0],
-      media: { create: { url: 'https://images.unsplash.com/photo-1544244015-0df4b3ffc6b0?q=80&w=400&auto=format&fit=crop', isPrimary: true } },
+      media: {
+        create: {
+          url: aiImageUrl(
+            'realistic AI photo of an iPad Air 4 on a desk with a visible cracked corner screen, student resale listing, documentary style',
+            { width: 400, height: 300, seed: 'dispute-ipad-air-4' }
+          ),
+          isPrimary: true,
+        },
+      },
     }
   });
 
@@ -294,13 +323,66 @@ async function main() {
   await prisma.disputeEvidence.create({
     data: {
       disputeCaseId: disputeCase2.id,
-      url: 'https://images.unsplash.com/photo-1544244015-0df4b3ffc6b0?q=80&w=400&auto=format&fit=crop',
+      url: aiImageUrl(
+        'realistic AI close-up photo of an iPad screen corner with a visible crack, evidence photo for dispute review',
+        { width: 400, height: 300, seed: 'dispute-evidence-ipad-crack' }
+      ),
       description: 'Ảnh chụp màn hình iPad bị nứt kính sâu ở góc phải.'
     }
   });
 
+  // 7. ACTIVITY LOGS (Security & Audit)
+  console.log('[DATA] Seeding Security Logs...');
+  const now = Date.now();
+  await prisma.activityLog.create({
+    data: {
+      userId: userIds[5],
+      action: 'CHANGE_PRICE',
+      targetType: 'PRODUCT',
+      targetId: productIds[5],
+      metadata: {
+        severity: 'WARNING',
+        actionLabel: 'THAY ĐỔI GIÁ ĐỘT NGỘT',
+        userEmail: 'dat.nv2199@sis.hust.edu.vn',
+        details: 'Sản phẩm "Giáo trình Giải tích 1" giảm giá đột ngột 95% từ 100k còn 5k (Dấu hiệu giao dịch ảo nhằm tăng điểm uy tín sinh viên)',
+      },
+      createdAt: new Date(now - 3 * 60 * 1000),
+    },
+  });
 
-  // 7. NOTIFICATIONS (5+)
+  await prisma.activityLog.create({
+    data: {
+      userId: userIds[1],
+      action: 'VERIFICATION_REQUEST',
+      targetType: 'VERIFICATION',
+      metadata: {
+        severity: 'INFO',
+        actionLabel: 'XÁC THỰC THÀNH VIÊN',
+        userEmail: 'quan.tm2245@sis.hust.edu.vn',
+        details: 'Tải lên ảnh thẻ sinh viên và nhập email trường yêu cầu duyệt quyền truy cập.',
+      },
+      createdAt: new Date(now - 10 * 60 * 1000),
+    },
+  });
+
+  await prisma.activityLog.create({
+    data: {
+      userId: sellerId,
+      action: 'SUSPICIOUS_EDIT',
+      targetType: 'PRODUCT',
+      targetId: disputeProduct1.id,
+      metadata: {
+        severity: 'CRITICAL',
+        actionLabel: 'SỬA TIN MÔ TẢ ĐANG GIAO DỊCH',
+        userEmail: 'huy.pd2011@sis.hust.edu.vn',
+        details: 'Chỉnh sửa RAM từ 16GB xuống 8GB của sản phẩm "Dell XPS" trong khi đơn hàng ord-8832 đang ở trạng thái Giữ Chỗ.',
+      },
+      createdAt: new Date(now - 60 * 60 * 1000),
+    },
+  });
+
+
+  // 8. NOTIFICATIONS (5+)
   console.log('[DATA] Seeding Notifications...');
   for (let i = 0; i < 10; i++) {
     await prisma.notification.create({
@@ -313,7 +395,7 @@ async function main() {
     });
   }
 
-  // 8. CONVERSATIONS (5+)
+  // 9. CONVERSATIONS (5+)
   console.log('[DATA] Seeding Messages...');
   for (let i = 0; i < 5; i++) {
     await prisma.conversation.create({

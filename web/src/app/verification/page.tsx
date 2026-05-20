@@ -1,20 +1,19 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { 
-  AlertCircle, 
-  Check, 
-  ShieldCheck, 
-  Mail, 
-  IdCard, 
+import {
+  AlertCircle,
+  Check,
+  ShieldCheck,
+  Mail,
+  IdCard,
   Loader2,
-  FileBadge
+  FileBadge,
 } from 'lucide-react';
 import DashboardLayout from '@/layouts/dashboard/DashboardLayout';
 import ImageUpload from '@/components/products/ImageUpload';
 
-// Define a basic user type to avoid 'any'
 interface User {
   id: string;
   email: string;
@@ -28,10 +27,13 @@ export default function VerificationPage() {
   const [submitting, setSubmitting] = useState(false);
   const [feedback, setFeedback] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
-  // Form states
   const [universityEmail, setUniversityEmail] = useState('');
   const [cardFront, setCardFront] = useState('');
   const [cardBack, setCardBack] = useState('');
+  const [fieldErrors, setFieldErrors] = useState<{ email?: string }>({});
+  const emailInputRef = useRef<HTMLInputElement>(null);
+
+  const isAllowedEmail = (value: string) => /@[\w.-]+\.edu\.vn$|@gmail\.com$/i.test(value.trim());
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -58,14 +60,41 @@ export default function VerificationPage() {
     setTimeout(() => setFeedback(null), 5000);
   };
 
+  const clearFieldError = (field: 'email') => {
+    setFieldErrors((prev) => {
+      const next = { ...prev };
+      delete next[field];
+      return next;
+    });
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!universityEmail || !cardFront || !cardBack) {
-      showFeedback('Vui lòng điền đầy đủ thông tin và tải ảnh thẻ!', 'error');
+
+    const nextErrors: { email?: string } = {};
+
+    if (!universityEmail.trim()) {
+      nextErrors.email = 'Vui lòng nhập email trường.';
+    } else if (!isAllowedEmail(universityEmail)) {
+      nextErrors.email = 'Email phải có đuôi `.edu.vn` hoặc `gmail.com`.';
+    }
+
+    if (Object.keys(nextErrors).length > 0) {
+      setFieldErrors(nextErrors);
+      showFeedback('Vui lòng kiểm tra email trường.', 'error');
+      emailInputRef.current?.focus();
+
       return;
     }
 
+    const confirmed = window.confirm('Xác nhận gửi yêu cầu xác thực sinh viên?');
+    if (!confirmed) {
+      return;
+    }
+
+    setFieldErrors({});
     setSubmitting(true);
+
     try {
       const res = await fetch('/api/verifications', {
         method: 'POST',
@@ -73,7 +102,7 @@ export default function VerificationPage() {
         body: JSON.stringify({
           studentCardFront: cardFront,
           studentCardBack: cardBack,
-          emailOtp: '123456', // Mock OTP for now as requested flow is "Xác thực: đăng ký, email trường, thẻ SV, duyệt"
+          emailOtp: '123456',
         }),
       });
 
@@ -108,8 +137,10 @@ export default function VerificationPage() {
             <AlertCircle className="w-10 h-10" />
           </div>
           <h2 className="text-xl font-bold mb-2">Bạn cần đăng nhập</h2>
-          <p className="text-zinc-500 max-w-sm mb-8">Vui lòng đăng nhập tài khoản sinh viên để thực hiện quy trình xác thực danh tính.</p>
-          <button 
+          <p className="text-zinc-500 max-w-sm mb-8">
+            Vui lòng đăng nhập tài khoản sinh viên để thực hiện quy trình xác thực danh tính.
+          </p>
+          <button
             onClick={() => router.push('/login')}
             className="bg-blue-600 text-white px-8 py-3 rounded-2xl font-bold shadow-lg shadow-blue-500/20 active:scale-95 transition-all"
           >
@@ -131,8 +162,10 @@ export default function VerificationPage() {
             </div>
           </div>
           <h2 className="text-2xl font-bold mb-2 text-zinc-900 dark:text-white">Bạn đã được xác thực!</h2>
-          <p className="text-zinc-500 max-w-md mb-8">Tài khoản của bạn đã được quản trị viên phê duyệt. Bây giờ bạn có thể đăng tin bán và thực hiện các giao dịch tin cậy trên hệ thống.</p>
-          <button 
+          <p className="text-zinc-500 max-w-md mb-8">
+            Tài khoản của bạn đã được quản trị viên phê duyệt. Bây giờ bạn có thể đăng tin bán và thực hiện các giao dịch tin cậy trên hệ thống.
+          </p>
+          <button
             onClick={() => router.push('/')}
             className="bg-zinc-950 dark:bg-zinc-100 text-white dark:text-zinc-950 px-8 py-3 rounded-2xl font-bold active:scale-95 transition-all"
           >
@@ -147,18 +180,19 @@ export default function VerificationPage() {
     <DashboardLayout activeItemId="verification" pageTitle="Xác Thực Sinh Viên">
       <div className="max-w-4xl mx-auto py-8 px-4">
         {feedback && (
-          <div className={`mb-8 p-4 rounded-2xl flex items-center gap-3 border animate-slide-in ${
-            feedback.type === 'success' 
-              ? 'bg-emerald-50 dark:bg-emerald-900/20 border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400' 
-              : 'bg-rose-50 dark:bg-rose-900/20 border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-400'
-          }`}>
+          <div
+            className={`mb-8 p-4 rounded-2xl flex items-center gap-3 border animate-slide-in ${
+              feedback.type === 'success'
+                ? 'bg-emerald-50 dark:bg-emerald-900/20 border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400'
+                : 'bg-rose-50 dark:bg-rose-900/20 border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-400'
+            }`}
+          >
             {feedback.type === 'success' ? <Check className="w-5 h-5" /> : <AlertCircle className="w-5 h-5" />}
             <span className="font-semibold text-sm">{feedback.message}</span>
           </div>
         )}
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Instructions Column */}
           <div className="lg:col-span-1 space-y-6">
             <div className="bg-blue-600 rounded-3xl p-8 text-white relative overflow-hidden shadow-xl shadow-blue-500/20">
               <div className="absolute -top-12 -right-12 w-48 h-48 bg-white/10 rounded-full blur-3xl pointer-events-none" />
@@ -168,7 +202,7 @@ export default function VerificationPage() {
                 {[
                   { step: 1, title: 'Email trường', desc: 'Sử dụng email .edu.vn để đăng ký hoặc cập nhật.' },
                   { step: 2, title: 'Ảnh thẻ SV', desc: 'Chụp rõ nét mặt trước và mặt sau thẻ sinh viên.' },
-                  { step: 3, title: 'Duyệt hồ sơ', desc: 'Quản trị viên sẽ phê duyệt trong vòng 24h.' }
+                  { step: 3, title: 'Duyệt hồ sơ', desc: 'Quản trị viên sẽ phê duyệt trong vòng 24h.' },
                 ].map((s) => (
                   <li key={s.step} className="flex gap-4">
                     <div className="flex-shrink-0 w-6 h-6 rounded-full bg-white/20 flex items-center justify-center text-xs font-bold border border-white/30">
@@ -194,11 +228,9 @@ export default function VerificationPage() {
             </div>
           </div>
 
-          {/* Form Column */}
           <div className="lg:col-span-2">
             <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-8 shadow-sm">
               <form onSubmit={handleSubmit} className="space-y-8">
-                {/* Email Section */}
                 <div className="space-y-4">
                   <div className="flex items-center gap-2 mb-2">
                     <div className="w-8 h-8 rounded-lg bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center text-blue-600 dark:text-blue-400">
@@ -208,23 +240,27 @@ export default function VerificationPage() {
                   </div>
                   <div className="relative">
                     <input
+                      ref={emailInputRef}
                       type="email"
                       value={universityEmail}
-                      onChange={(e) => setUniversityEmail(e.target.value)}
+                      onChange={(e) => {
+                        setUniversityEmail(e.target.value);
+                        clearFieldError('email');
+                      }}
                       placeholder="mssv@sis.hust.edu.vn"
-                      className="w-full pl-4 pr-4 py-3.5 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-2xl text-sm outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 transition-all font-medium"
+                      className={`w-full pl-4 pr-4 py-3.5 bg-zinc-50 dark:bg-zinc-800 border rounded-2xl text-sm outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 transition-all font-medium ${
+                        fieldErrors.email ? 'border-rose-500 dark:border-rose-500' : 'border-zinc-200 dark:border-zinc-700'
+                      }`}
                       required
                     />
-                    <div className="mt-2 flex items-center gap-2 px-1">
-                      <div className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
-                      <span className="text-[10px] font-bold text-amber-600 dark:text-amber-400 uppercase tracking-widest">Yêu cầu đuôi .edu.vn</span>
-                    </div>
+                    {fieldErrors.email && (
+                      <p className="mt-2 text-[11px] font-semibold text-rose-500">{fieldErrors.email}</p>
+                    )}
                   </div>
                 </div>
 
                 <hr className="border-zinc-100 dark:border-zinc-800" />
 
-                {/* ID Card Section */}
                 <div className="space-y-6">
                   <div className="flex items-center gap-2 mb-2">
                     <div className="w-8 h-8 rounded-lg bg-indigo-50 dark:bg-indigo-900/30 flex items-center justify-center text-indigo-600 dark:text-indigo-400">
@@ -232,18 +268,10 @@ export default function VerificationPage() {
                     </div>
                     <h3 className="font-bold text-base">Tải ảnh Thẻ Sinh Viên</h3>
                   </div>
-                  
+
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <ImageUpload 
-                      value={cardFront} 
-                      onChange={setCardFront} 
-                      label="Mặt trước thẻ SV" 
-                    />
-                    <ImageUpload 
-                      value={cardBack} 
-                      onChange={setCardBack} 
-                      label="Mặt sau thẻ SV" 
-                    />
+                    <ImageUpload value={cardFront} onChange={setCardFront} label="Mặt trước thẻ SV" />
+                    <ImageUpload value={cardBack} onChange={setCardBack} label="Mặt sau thẻ SV" />
                   </div>
                 </div>
 

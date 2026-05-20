@@ -1,11 +1,6 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import type { CSSProperties } from "react";
 import "./globals.css";
-
-const interFont = Inter({
-  variable: "--font-sans",
-  subsets: ["latin", "vietnamese"],
-});
 
 export const metadata: Metadata = {
   title: "StuRelief - Campus Exchange",
@@ -20,7 +15,12 @@ export default function RootLayout({
   return (
     <html
       lang="vi"
-      className={`${interFont.variable} h-full antialiased`}
+      className="h-full antialiased"
+      style={
+        {
+          '--font-sans': 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+        } as CSSProperties
+      }
     >
       <body className="min-h-full flex flex-col font-sans">{children}</body>
     </html>

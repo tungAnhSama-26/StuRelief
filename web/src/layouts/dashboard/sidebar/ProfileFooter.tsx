@@ -26,10 +26,10 @@ export default function ProfileFooter({ currentUser, isCollapsed, onLogout }: Pr
         <div className={`flex items-center ${isCollapsed ? 'justify-center w-full' : 'justify-between'} gap-2.5`}>
           <div className={`flex items-center ${isCollapsed ? 'justify-center w-full' : 'gap-2.5 min-w-0'}`}>
             <div className={`w-8.5 h-8.5 rounded-full overflow-hidden shadow-sm border flex items-center justify-center font-black text-xs shrink-0 select-none ${currentUser.role === 'ADMIN' ? 'border-red-200 dark:border-red-900/40 bg-red-600 text-white' : 'border-zinc-200 dark:border-zinc-800 bg-blue-600 text-white'}`}>
-              {currentUser.role === 'ADMIN' ? (
-                <span>AD</span>
-              ) : currentUser.avatarUrl ? (
+              {currentUser.avatarUrl ? (
                 <img src={currentUser.avatarUrl} alt={currentUser.fullName} referrerPolicy="no-referrer" className="w-full h-full object-cover" />
+              ) : currentUser.role === 'ADMIN' ? (
+                <span>AD</span>
               ) : (
                 <span>{currentUser.fullName.charAt(0).toUpperCase()}</span>
               )}
@@ -52,7 +52,7 @@ export default function ProfileFooter({ currentUser, isCollapsed, onLogout }: Pr
             <button
               onClick={onLogout}
               title="Đăng xuất"
-              className="p-2 rounded-xl hover:bg-zinc-200/60 dark:hover:bg-zinc-800 text-zinc-400 hover:text-rose-600 dark:hover:text-rose-400 transition-colors cursor-pointer"
+              className="p-2 rounded-xl hover:bg-zinc-200/60 dark:hover:bg-zinc-800 text-zinc-400 hover:text-rose-600 dark:hover:text-rose-400 transition-all duration-200 active:scale-95 transform-gpu cursor-pointer"
             >
               <LogOut className="w-4 h-4" />
             </button>

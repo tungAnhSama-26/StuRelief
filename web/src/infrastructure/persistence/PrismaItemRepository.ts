@@ -1,72 +1,88 @@
 import { Item, CreateItemDTO as PostItemDTO, UpdateItemDTO } from '@shared/domain/Item';
 import { IItemRepository } from '@shared/domain/IItemRepository';
-import { ItemSpecification } from '@/domain/repositories/ItemSpecification';
+import { FilterItemSpecification, ItemSpecification } from '@/domain/repositories/ItemSpecification';
 import prisma from '@/lib/prisma';
+import { ProductStatus } from '@shared';
+
+type ItemFilters = {
+  search?: string;
+  category?: string;
+  studentId?: string;
+  status?: string;
+};
 
 export class PrismaItemRepository implements IItemRepository {
-  async findAll(
-    page: number,
-    limit: number,
-    specification?: ItemSpecification
-  ): Promise<{ items: Item[]; total: number }> {
-    const skip = (page - 1) * limit;
-
-    const where = specification ? specification.toPrismaWhere() : {};
-
-    const [products, total] = await Promise.all([
-      prisma.product.findMany({
-        where,
-        skip,
-        take: limit,
-        orderBy: { createdAt: 'desc' },
-        include: {
-          media: true,
-          category: true,
-        },
-      }),
-      prisma.product.count({ where }),
-    ]);
-
-    return {
-      items: products.map((p) => ({
-        id: p.id,
-        name: p.name,
-        price: p.currentPrice,
-        category: p.category ? p.category.name : 'Chưa phân loại',
-        images: p.media.filter((m) => m.type === 'IMAGE').map((m) => m.url),
-        studentId: p.sellerId,
-        isQuickSell: false,
-        description: p.description,
-        createdAt: p.createdAt,
-        updatedAt: p.updatedAt,
-      })) as Item[],
-      total,
-    };
-  }
-
-  async findById(id: string): Promise<Item | null> {
-    const product = await prisma.product.findUnique({
-      where: { id },
-      include: {
-        media: true,
-        category: true,
-      },
-    });
-
-    if (!product) return null;
-
+  private mapProduct(product: any): Item {
     return {
       id: product.id,
       name: product.name,
       price: product.currentPrice,
       category: product.category ? product.category.name : 'Chưa phân loại',
-      images: product.media.filter((m) => m.type === 'IMAGE').map((m) => m.url),
+      images: product.media.filter((m: any) => m.type === 'IMAGE').map((m: any) => m.url),
       studentId: product.sellerId,
       isQuickSell: false,
+      status: product.status as ProductStatus,
       description: product.description,
       createdAt: product.createdAt,
       updatedAt: product.updatedAt,
     };
+  }
+
+  async findAll(
+    page: number,
+    limit: number,
+    specification?: ItemSpecification | ItemFilters
+  ): Promise<{ items: Item[]; total: number }> {
+    try {
+      const skip = (page - 1) * limit;
+
+      const where = !specification
+        ? {}
+        : 'toPrismaWhere' in specification
+          ? specification.toPrismaWhere()
+          : new FilterItemSpecification(specification).toPrismaWhere();
+
+      const [products, total] = await Promise.all([
+        prisma.product.findMany({
+          where,
+          skip,
+          take: limit,
+          orderBy: { createdAt: 'desc' },
+          include: {
+            media: true,
+            category: true,
+          },
+        }),
+        prisma.product.count({ where }),
+      ]);
+
+      return {
+        items: products.map((p) => this.mapProduct(p)),
+        total,
+      };
+    } catch (error) {
+      console.error('PrismaItemRepository.findAll fallback:', error);
+      return { items: [], total: 0 };
+    }
+  }
+
+  async findById(id: string): Promise<Item | null> {
+    try {
+      const product = await prisma.product.findUnique({
+        where: { id },
+        include: {
+          media: true,
+          category: true,
+        },
+      });
+
+      if (!product) return null;
+
+      return this.mapProduct(product);
+    } catch (error) {
+      console.error('PrismaItemRepository.findById fallback:', error);
+      return null;
+    }
   }
 
   async save(data: PostItemDTO): Promise<Item> {
@@ -91,7 +107,7 @@ export class PrismaItemRepository implements IItemRepository {
         sellerId: data.studentId || 'default-seller-id',
         categoryId: category ? category.id : 'default-category-id',
         condition: 'USED_GOOD',
-        status: 'AVAILABLE',
+        status: 'DRAFT',
         media: {
           create: data.images.map((url) => ({
             url,
@@ -105,18 +121,7 @@ export class PrismaItemRepository implements IItemRepository {
       },
     });
 
-    return {
-      id: newProduct.id,
-      name: newProduct.name,
-      price: newProduct.currentPrice,
-      category: newProduct.category ? newProduct.category.name : 'Chưa phân loại',
-      images: newProduct.media.map((m) => m.url),
-      studentId: newProduct.sellerId,
-      isQuickSell: false,
-      description: newProduct.description,
-      createdAt: newProduct.createdAt,
-      updatedAt: newProduct.updatedAt,
-    };
+    return this.mapProduct(newProduct);
   }
 
   async update(id: string, data: UpdateItemDTO): Promise<Item> {
@@ -143,7 +148,8 @@ export class PrismaItemRepository implements IItemRepository {
         currentPrice: data.price,
         description: data.description,
         sellerId: data.studentId,
-        categoryId: categoryId,
+        categoryId,
+        status: data.status,
       },
       include: {
         media: true,
@@ -151,7 +157,6 @@ export class PrismaItemRepository implements IItemRepository {
       },
     });
 
-    // If images are updated, handle media replacement
     if (data.images && data.images.length > 0) {
       await prisma.productMedia.deleteMany({
         where: { productId: id },
@@ -173,18 +178,11 @@ export class PrismaItemRepository implements IItemRepository {
       },
     });
 
-    return {
-      id: updated.id,
-      name: updated.name,
-      price: updated.currentPrice,
-      category: finalProduct?.category ? finalProduct.category.name : 'Chưa phân loại',
-      images: finalProduct?.media.filter((m) => m.type === 'IMAGE').map((m) => m.url) || [],
-      studentId: updated.sellerId,
-      isQuickSell: false,
-      description: updated.description,
-      createdAt: updated.createdAt,
-      updatedAt: updated.updatedAt,
-    };
+    return this.mapProduct({
+      ...updated,
+      media: finalProduct?.media || [],
+      category: finalProduct?.category || null,
+    });
   }
 
   async delete(id: string): Promise<void> {
@@ -196,4 +194,3 @@ export class PrismaItemRepository implements IItemRepository {
     });
   }
 }
-

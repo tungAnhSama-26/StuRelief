@@ -10,6 +10,7 @@ export const APP_ROUTES = {
   ADMIN: {
     DASHBOARD: '/admin',
     APPROVALS: '/admin/approvals',
+    POSTS: '/admin/posts',
     DISPUTES: '/admin/disputes',
     LOGS: '/admin/logs',
     MEETING_POINTS: '/admin/meeting-points',

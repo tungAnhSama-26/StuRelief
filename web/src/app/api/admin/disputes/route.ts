@@ -3,6 +3,7 @@ import prisma from '@/lib/prisma';
 import { cookies } from 'next/headers';
 import { verifyToken } from '@/lib/jwt';
 import { env } from '@/infrastructure/config/env';
+import { aiImageUrl } from '@/lib/aiImage';
 
 export async function GET(request: Request) {
   try {
@@ -59,7 +60,7 @@ export async function GET(request: Request) {
           status: dispute.status,
           createdAt: dispute.createdAt,
           updatedAt: dispute.updatedAt,
-          evidenceImage: dispute.evidences[0]?.url || 'https://images.unsplash.com/photo-1544244015-0df4b3ffc6b0?q=80&w=400&auto=format&fit=crop',
+          evidenceImage: dispute.evidences[0]?.url || aiImageUrl(`realistic AI evidence photo for dispute review of ${dispute.order.product.name}`, { width: 400, height: 400, seed: `evidence-${dispute.id}` }),
           evidenceDescription: dispute.evidences[0]?.description || '',
           buyerName: buyer?.profile?.fullName || 'Sinh viên A',
           buyerEmail: buyer?.email || 'studentA@edu.vn',
@@ -77,7 +78,7 @@ export async function GET(request: Request) {
               cpu: 'Intel Core i5',
               condition: dispute.order.product.condition === 'USED_GOOD' ? 'USED_GOOD (Có trầy xước nhẹ)' : dispute.order.product.condition
             },
-            image: dispute.order.product.media[0]?.url || 'https://images.unsplash.com/photo-1593642632823-8f785ba67e45?q=80&w=400&auto=format&fit=crop',
+            image: dispute.order.product.media[0]?.url || aiImageUrl(`realistic AI product photo of ${dispute.order.product.name}`, { width: 400, height: 400, seed: `current-${dispute.id}` }),
             updatedAt: 'Thời điểm bàn giao giao dịch'
           },
           disputeSnapshot: originalSnapshot ? {
@@ -91,7 +92,7 @@ export async function GET(request: Request) {
               cpu: (originalSnapshot.data as any).cpu || 'Intel Core i7',
               condition: (originalSnapshot.data as any).condition || 'USED_LIKE_NEW'
             },
-            image: dispute.order.product.media[0]?.url || 'https://images.unsplash.com/photo-1593642632823-8f785ba67e45?q=80&w=400&auto=format&fit=crop',
+            image: dispute.order.product.media[0]?.url || aiImageUrl(`realistic AI product photo of ${dispute.order.product.name}`, { width: 400, height: 400, seed: `snapshot-${dispute.id}` }),
             updatedAt: 'Thời điểm chốt cọc giữ chỗ (Bản gốc)'
           } : null
         };

@@ -85,15 +85,15 @@ export default function Header() {
                     ? 'border-red-200 dark:border-red-900/40 bg-red-600 text-white'
                     : 'border-slate-200 dark:border-zinc-800 bg-blue-600 text-white'
                 }`}>
-                  {currentUser.role === 'ADMIN' ? (
-                    <span>AD</span>
-                  ) : currentUser.avatarUrl ? (
+                  {currentUser.avatarUrl ? (
                     <img
                       src={currentUser.avatarUrl}
                       alt={currentUser.fullName}
                       referrerPolicy="no-referrer"
                       className="w-full h-full object-cover"
                     />
+                  ) : currentUser.role === 'ADMIN' ? (
+                    <span>AD</span>
                   ) : (
                     <span>{currentUser.fullName.charAt(0).toUpperCase()}</span>
                   )}

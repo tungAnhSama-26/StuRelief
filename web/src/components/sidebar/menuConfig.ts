@@ -1,12 +1,14 @@
 import {
   Compass,
   FileBadge,
-  UserCheck,
   Activity,
   Scale,
   History,
   Map,
-  LucideIcon
+  UserCheck,
+  Award,
+  ClipboardCheck,
+  LucideIcon,
 } from 'lucide-react';
 import { APP_ROUTES, UserRole } from '@shared';
 
@@ -14,7 +16,6 @@ export interface MenuItem {
   id: string;
   label: string;
   icon: LucideIcon;
-  desc: string;
   path: string;
 }
 
@@ -24,25 +25,17 @@ export interface MenuGroup {
 }
 
 export const getMenuGroups = (role: UserRole): MenuGroup[] => {
+  const userItems = [
+    { id: 'catalog', label: 'Chợ Đồ Cũ Sinh Viên', icon: Compass, path: APP_ROUTES.HOME },
+    ...(role === UserRole.ADMIN
+      ? []
+      : [{ id: 'verification', label: 'Xác Thực Sinh Viên', icon: FileBadge, path: APP_ROUTES.VERIFICATION }]),
+  ];
+
   const userGroups: MenuGroup[] = [
     {
       title: 'Mua Bán & Trao Đổi',
-      items: [
-        {
-          id: 'catalog',
-          label: 'Chợ Đồ Cũ Sinh Viên',
-          icon: Compass,
-          desc: 'Duyệt đồ dùng học tập (BL-CT-02)',
-          path: APP_ROUTES.HOME,
-        },
-        {
-          id: 'verification',
-          label: 'Xác Thực Sinh Viên',
-          icon: FileBadge,
-          desc: 'Xác thực thẻ & email trường (BL-ID-01)',
-          path: APP_ROUTES.VERIFICATION,
-        },
-      ],
+      items: userItems,
     },
   ];
 
@@ -50,48 +43,13 @@ export const getMenuGroups = (role: UserRole): MenuGroup[] => {
     {
       title: 'Hệ Thống Quản Trị',
       items: [
-        {
-          id: 'dashboard',
-          label: 'Dashboard Tổng Quan',
-          icon: Activity,
-          desc: 'Chỉ số sức khỏe hệ thống',
-          path: APP_ROUTES.ADMIN.DASHBOARD,
-        },
-        {
-          id: 'approvals',
-          label: 'Xác Thực Thẻ SV',
-          icon: UserCheck,
-          desc: 'Phê duyệt thẻ sinh viên (BL-ID-01)',
-          path: APP_ROUTES.ADMIN.APPROVALS,
-        },
-        {
-          id: 'handovers',
-          label: 'Bàn Giao & Bằng Chứng',
-          icon: FileBadge,
-          desc: 'Quản lý bằng chứng giao nhận (ST-09)',
-          path: '/admin/handovers',
-        },
-        {
-          id: 'disputes',
-          label: 'Xử Lý Tranh Chấp',
-          icon: Scale,
-          desc: 'Giải quyết khiếu nại (ST-10/11)',
-          path: APP_ROUTES.ADMIN.DISPUTES,
-        },
-        {
-          id: 'audit-logs',
-          label: 'Lịch Sử Hoạt Động',
-          icon: History,
-          desc: 'Xem Activity Log hệ thống (BL-AD-12)',
-          path: APP_ROUTES.ADMIN.LOGS,
-        },
-        {
-          id: 'meeting-points',
-          label: 'Điểm Hẹn An Toàn',
-          icon: Map,
-          desc: 'Thiết lập Hub an toàn (ST-07)',
-          path: APP_ROUTES.ADMIN.MEETING_POINTS,
-        },
+        { id: 'dashboard', label: 'Dashboard Tổng Quan', icon: Activity, path: APP_ROUTES.ADMIN.DASHBOARD },
+        { id: 'approvals', label: 'Xác Thực Thẻ SV', icon: UserCheck, path: APP_ROUTES.ADMIN.APPROVALS },
+        { id: 'posts', label: 'Duyệt Bài Đăng', icon: ClipboardCheck, path: APP_ROUTES.ADMIN.POSTS },
+        { id: 'disputes', label: 'Xử Lý Tranh Chấp', icon: Scale, path: APP_ROUTES.ADMIN.DISPUTES },
+        { id: 'reputations', label: 'Uy Tín & Đánh Giá', icon: Award, path: APP_ROUTES.ADMIN.REPUTATION },
+        { id: 'audit-logs', label: 'Lịch Sử Hoạt Động', icon: History, path: APP_ROUTES.ADMIN.LOGS },
+        { id: 'meeting-points', label: 'Điểm Hẹn An Toàn', icon: Map, path: APP_ROUTES.ADMIN.MEETING_POINTS },
       ],
     },
   ];

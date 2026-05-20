@@ -19,6 +19,16 @@ export async function GET(
     const useCase = new GetItemDetailUseCase(itemRepository);
     const item = await useCase.execute(id);
 
+    if (item.status !== 'AVAILABLE') {
+      const cookieStore = await cookies();
+      const token = cookieStore.get('token')?.value;
+      const payload = token ? verifyToken(token, env.JWT_SECRET) : null;
+
+      if (!payload || (payload.role !== 'ADMIN' && payload.id !== item.studentId)) {
+        return NextResponse.json({ error: 'Item not found' }, { status: 404 });
+      }
+    }
+
     return NextResponse.json(item);
   } catch (error: any) {
     if (error.message === 'Item not found') {
@@ -52,6 +62,8 @@ export async function PUT(
             { status: 403 }
           );
         }
+
+        body.status = payload.role === 'ADMIN' ? body.status ?? product?.status : 'DRAFT';
       }
     }
 

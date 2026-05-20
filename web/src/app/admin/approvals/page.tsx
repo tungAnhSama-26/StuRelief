@@ -32,6 +32,12 @@ export default function ApprovalsPage() {
   const [selectedVerification, setSelectedVerification] = useState<VerificationRequest | null>(null);
   const [verifications, setVerifications] = useState<VerificationRequest[]>([]);
   const [loading, setLoading] = useState(true);
+  const [feedback, setFeedback] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+
+  const showFeedback = (message: string, type: 'success' | 'error' = 'success') => {
+    setFeedback({ message, type });
+    setTimeout(() => setFeedback(null), 3000);
+  };
 
   const fetchVerifications = async () => {
     try {
@@ -56,6 +62,13 @@ export default function ApprovalsPage() {
 
   // Handle Verify Actions (Approve/Reject)
   const handleVerifyRequest = async (id: string, action: 'APPROVED' | 'REJECTED') => {
+    const confirmed = window.confirm(
+      action === 'APPROVED'
+        ? 'Xác nhận duyệt yêu cầu xác thực này?'
+        : 'Xác nhận từ chối yêu cầu xác thực này?'
+    );
+    if (!confirmed) return;
+
     try {
       const res = await fetch('/api/admin/verifications', {
         method: 'PUT',
@@ -66,9 +79,11 @@ export default function ApprovalsPage() {
       if (res.ok) {
         setVerifications(prev => prev.map(req => req.id === id ? { ...req, status: action } : req));
         setSelectedVerification(null);
+        showFeedback(action === 'APPROVED' ? 'Duyệt xác thực thành công!' : 'Từ chối xác thực thành công!');
       }
     } catch (err) {
       console.error('Lỗi khi cập nhật trạng thái:', err);
+      showFeedback('Đã có lỗi xảy ra khi cập nhật trạng thái.', 'error');
     }
   };
 
@@ -90,6 +105,15 @@ export default function ApprovalsPage() {
   return (
     <DashboardLayout activeItemId="approvals" pageTitle="Xác Thực Thẻ Sinh Viên">
       <div className="space-y-6">
+        {feedback && (
+          <div className={`fixed top-5 right-5 z-50 px-5 py-3 rounded-2xl shadow-xl border flex items-center gap-2 ${
+            feedback.type === 'success'
+              ? 'bg-emerald-500 text-white border-emerald-400'
+              : 'bg-rose-500 text-white border-rose-400'
+          }`}>
+            <span className="text-sm font-semibold">{feedback.message}</span>
+          </div>
+        )}
         
         {/* Breadcrumb back to dashboard */}
         <div className="flex items-center justify-between">
@@ -112,7 +136,6 @@ export default function ApprovalsPage() {
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
             <div>
               <h3 className="text-base font-semibold">Xét duyệt thẻ sinh viên & Email trường</h3>
-              <p className="text-[11px] text-zinc-400 mt-1">Duyệt danh tính sinh viên để đảm bảo an toàn giao dịch nội bộ trường học.</p>
             </div>
             
             {/* Search Box */}
@@ -181,7 +204,7 @@ export default function ApprovalsPage() {
 
       {/* STUDENT CARD VERIFICATION MODAL POPUP */}
       {selectedVerification && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+        <div className="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4 py-6 bg-black/60 backdrop-blur-sm">
           <div className="relative bg-white dark:bg-zinc-900 w-full max-w-lg rounded-3xl overflow-hidden shadow-2xl border border-zinc-200 dark:border-zinc-800 animate-scale-up max-h-[90vh] overflow-y-auto">
             
             <div className="p-6 border-b border-zinc-100 dark:border-zinc-800/60 flex items-center justify-between">

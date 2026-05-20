@@ -57,6 +57,12 @@ export default function DisputesPage() {
   const [disputeSearch, setDisputeSearch] = useState('');
   const [selectedDispute, setSelectedDispute] = useState<DisputeCase | null>(null);
   const [showSnapshotComparison, setShowSnapshotComparison] = useState(false);
+  const [feedback, setFeedback] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+
+  const showFeedback = (message: string, type: 'success' | 'error' = 'success') => {
+    setFeedback({ message, type });
+    setTimeout(() => setFeedback(null), 3000);
+  };
 
   // Fetch disputes from API on mount
   React.useEffect(() => {
@@ -78,6 +84,13 @@ export default function DisputesPage() {
 
   // Handle Dispute Resolution via PUT API
   const handleResolveDispute = async (id: string, action: 'RESOLVED' | 'INVESTIGATING') => {
+    const confirmed = window.confirm(
+      action === 'RESOLVED'
+        ? 'Xác nhận xử lý và chốt tranh chấp này?'
+        : 'Xác nhận chuyển tranh chấp sang trạng thái điều tra?'
+    );
+    if (!confirmed) return;
+
     try {
       setRefreshLoading(true);
       const res = await fetch(`/api/admin/disputes/${id}`, {
@@ -94,9 +107,11 @@ export default function DisputesPage() {
           setDisputes(data);
         }
         setSelectedDispute(null);
+        showFeedback(action === 'RESOLVED' ? 'Xử lý tranh chấp thành công!' : 'Đã chuyển sang trạng thái điều tra.');
       }
     } catch (err) {
       console.error('Failed to resolve dispute:', err);
+      showFeedback('Đã có lỗi xảy ra khi xử lý tranh chấp.', 'error');
     } finally {
       setRefreshLoading(false);
     }
@@ -122,6 +137,15 @@ export default function DisputesPage() {
   return (
     <DashboardLayout activeItemId="disputes" pageTitle="Xử Lý Tranh Chấp & Đối Soát">
       <div className="space-y-6">
+        {feedback && (
+          <div className={`fixed top-5 right-5 z-50 px-5 py-3 rounded-2xl shadow-xl border flex items-center gap-2 ${
+            feedback.type === 'success'
+              ? 'bg-emerald-500 text-white border-emerald-400'
+              : 'bg-rose-500 text-white border-rose-400'
+          }`}>
+            <span className="text-sm font-semibold">{feedback.message}</span>
+          </div>
+        )}
         
         {/* Breadcrumb back to dashboard */}
         <div className="flex items-center justify-between">
@@ -144,7 +168,6 @@ export default function DisputesPage() {
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
             <div>
               <h3 className="text-base font-semibold">Đối soát & Xử lý Tranh chấp</h3>
-              <p className="text-[11px] text-zinc-400 mt-1">So sánh ảnh chụp snapshot tin đăng tại thời điểm chốt cọc để phát hiện gian lận sửa thông tin.</p>
             </div>
             
             {/* Search Box */}
@@ -214,7 +237,7 @@ export default function DisputesPage() {
 
       {/* DISPUTE & SNAPSHOT COMPARISON MODAL */}
       {selectedDispute && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+        <div className="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4 py-6 bg-black/60 backdrop-blur-sm">
           <div className="relative bg-white dark:bg-zinc-900 w-full max-w-4xl rounded-3xl overflow-hidden shadow-2xl border border-zinc-200 dark:border-zinc-800 animate-scale-up max-h-[90vh] overflow-y-auto">
             
             <div className="p-6 border-b border-zinc-100 dark:border-zinc-800/60 flex items-center justify-between">
@@ -345,9 +368,6 @@ export default function DisputesPage() {
                   </div>
                   <div className="bg-zinc-50 dark:bg-zinc-800/45 p-6 rounded-2xl flex flex-col justify-center space-y-4">
                     <h5 className="text-xs font-semibold uppercase text-zinc-400">Kết luận sơ bộ từ hệ thống:</h5>
-                    <p className="text-xs font-medium text-zinc-600 dark:text-zinc-300 leading-relaxed">
-                      Lịch sử hệ thống phát hiện tin đăng bị người bán sửa đổi các thông số cấu hình chính từ 16GB xuống 8GB vào thời điểm đơn hàng đang ở trạng thái Giữ Chỗ. Hành vi gian lận tráo đổi thông tin đã rõ ràng.
-                    </p>
                     <div className="p-3 bg-rose-500/10 text-rose-500 rounded-xl text-xs font-medium">
                       Biện pháp khuyến nghị: Khôi phục lại bản mô tả gốc lúc chốt đơn hàng và hạ 20 điểm uy tín đối với bên bán.
                     </div>

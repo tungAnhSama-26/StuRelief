@@ -67,24 +67,25 @@ const SearchAndFilter: React.FC<SearchAndFilterProps> = ({
   const allCategoriesOptions = ['Tất cả danh mục', ...categories];
 
   return (
-    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8 bg-white dark:bg-zinc-900 p-4 rounded-3xl border border-zinc-200 dark:border-zinc-800 shadow-sm">
-      <form onSubmit={handleSearchSubmit} className="flex-1 flex gap-2">
+    <div className="mb-8 flex flex-col gap-4 rounded-3xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900 md:flex-row md:items-center md:justify-between">
+      <form onSubmit={handleSearchSubmit} className="flex flex-1 gap-2">
         <div className="relative flex-1">
-          <span className="absolute inset-y-0 left-4 flex items-center pointer-events-none text-zinc-400">
-            <Search className="w-5 h-5" />
+          <span className="pointer-events-none absolute inset-y-0 left-4 flex items-center text-zinc-400">
+            <Search className="h-5 w-5" />
           </span>
           <input
             type="text"
             placeholder="Tìm kiếm sách vở, đồ dùng, điện thoại..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-12 pr-4 py-3 bg-zinc-50 dark:bg-zinc-800 border border-zinc-150 dark:border-zinc-700 rounded-2xl text-sm outline-none focus:border-blue-500 focus:bg-white dark:focus:bg-zinc-900 transition-all"
+            className="w-full rounded-2xl border border-zinc-150 bg-zinc-50 py-3 pl-12 pr-4 text-sm outline-none transition-all focus:border-blue-500 focus:bg-white dark:border-zinc-700 dark:bg-zinc-800 dark:focus:bg-zinc-900"
           />
         </div>
         <button
           type="submit"
-          className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-3 rounded-2xl text-sm transition-all"
+          className="inline-flex items-center gap-2 rounded-2xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white shadow-md shadow-blue-500/15 transition-all hover:bg-blue-700"
         >
+          <Search className="h-4 w-4" />
           Tìm kiếm
         </button>
       </form>
@@ -93,7 +94,7 @@ const SearchAndFilter: React.FC<SearchAndFilterProps> = ({
         <select
           value={limit}
           onChange={handleLimitChange}
-          className="bg-zinc-50 dark:bg-zinc-800 border border-zinc-150 dark:border-zinc-700 rounded-2xl px-4 py-3 text-sm outline-none focus:border-blue-500 transition-all font-medium cursor-pointer"
+          className="cursor-pointer rounded-2xl border border-zinc-150 bg-zinc-50 px-4 py-3 text-sm font-medium outline-none transition-all focus:border-blue-500 dark:border-zinc-700 dark:bg-zinc-800"
         >
           <option value="8">8 tin / trang</option>
           <option value="12">12 tin / trang</option>
@@ -104,7 +105,7 @@ const SearchAndFilter: React.FC<SearchAndFilterProps> = ({
         <select
           value={category}
           onChange={handleCategoryChange}
-          className="bg-zinc-50 dark:bg-zinc-800 border border-zinc-150 dark:border-zinc-700 rounded-2xl px-4 py-3 text-sm outline-none focus:border-blue-500 transition-all font-medium cursor-pointer"
+          className="cursor-pointer rounded-2xl border border-zinc-150 bg-zinc-50 px-4 py-3 text-sm font-medium outline-none transition-all focus:border-blue-500 dark:border-zinc-700 dark:bg-zinc-800"
         >
           {allCategoriesOptions.map((cat) => (
             <option key={cat} value={cat}>
@@ -116,7 +117,7 @@ const SearchAndFilter: React.FC<SearchAndFilterProps> = ({
         {(search.trim() || category !== 'Tất cả danh mục' || limit !== 8) && (
           <button
             onClick={handleClear}
-            className="text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200 text-sm font-semibold px-3 py-3"
+            className="px-3 py-3 text-sm font-semibold text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200"
           >
             Xóa bộ lọc
           </button>
@@ -124,9 +125,9 @@ const SearchAndFilter: React.FC<SearchAndFilterProps> = ({
 
         <button
           onClick={onOpenCreateModal}
-          className="bg-zinc-900 dark:bg-zinc-100 hover:bg-zinc-800 dark:hover:bg-zinc-200 text-white dark:text-zinc-900 font-bold px-5 py-3 rounded-2xl text-sm transition-all shadow-md flex items-center gap-2"
+          className="flex items-center gap-2 rounded-2xl bg-blue-600 px-5 py-3 text-sm font-bold text-white shadow-md shadow-blue-500/15 transition-all hover:bg-blue-700"
         >
-          <Plus className="w-4 h-4" strokeWidth={3} />
+          <Plus className="h-4 w-4" strokeWidth={3} />
           Đăng bán ngay
         </button>
       </div>
