@@ -7,24 +7,27 @@ interface ImageUploadProps {
   value: string;
   onChange: (url: string) => void;
   label?: string;
+  validationError?: string | null;
 }
 
 const ImageUpload: React.FC<ImageUploadProps> = ({
   value,
   onChange,
   label = 'Ảnh minh họa sản phẩm',
+  validationError,
 }) => {
   const [isDragOver, setIsDragOver] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [uploadError, setUploadError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const hasError = Boolean(validationError || uploadError);
 
   const handleFile = async (file: File) => {
     if (!file.type.startsWith('image/')) {
-      setError('Chỉ cho phép tải lên file hình ảnh!');
+      setUploadError('Chỉ cho phép tải lên file hình ảnh!');
       return;
     }
-    setError(null);
+    setUploadError(null);
     setIsLoading(true);
 
     const formData = new FormData();
@@ -44,7 +47,7 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
       const data = await response.json();
       onChange(data.url);
     } catch (err: any) {
-      setError(err.message || 'Lỗi xảy ra trong quá trình tải lên!');
+      setUploadError(err.message || 'Lỗi xảy ra trong quá trình tải lên!');
     } finally {
       setIsLoading(false);
     }
@@ -65,7 +68,11 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
       </label>
 
       {value ? (
-        <div className="relative group aspect-video w-full rounded-2xl overflow-hidden border border-zinc-200 dark:border-zinc-800 shadow-sm bg-zinc-50 dark:bg-zinc-950 flex items-center justify-center">
+        <div
+          className={`relative group aspect-video w-full rounded-2xl overflow-hidden shadow-sm bg-zinc-50 dark:bg-zinc-950 flex items-center justify-center border ${
+            hasError ? 'border-rose-500 dark:border-rose-500' : 'border-zinc-200 dark:border-zinc-800'
+          }`}
+        >
           <img src={value} alt="Preview" className="w-full h-full object-cover" />
           <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center gap-2">
             <button
@@ -99,9 +106,11 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
           onDragLeave={() => setIsDragOver(false)}
           onDrop={handleDrop}
           className={`w-full aspect-video border-2 border-dashed rounded-3xl cursor-pointer flex flex-col items-center justify-center p-6 text-center transition-all duration-300 ${
-            isDragOver
-              ? 'border-blue-500 bg-blue-50/50 dark:bg-blue-950/20 scale-[0.99] shadow-inner'
-              : 'border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 bg-zinc-50 dark:bg-zinc-900/50'
+            hasError
+              ? 'border-rose-500 bg-rose-50/40 dark:bg-rose-950/10'
+              : isDragOver
+                ? 'border-blue-500 bg-blue-50/50 dark:bg-blue-950/20 scale-[0.99] shadow-inner'
+                : 'border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 bg-zinc-50 dark:bg-zinc-900/50'
           }`}
         >
           {isLoading ? (
@@ -121,10 +130,10 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
         </div>
       )}
 
-      {error && (
+      {(validationError || uploadError) && (
         <p className="text-xs text-rose-500 mt-2 font-semibold flex items-center gap-1.5">
           <AlertCircle className="w-3.5 h-3.5" />
-          {error}
+          {validationError || uploadError}
         </p>
       )}
 

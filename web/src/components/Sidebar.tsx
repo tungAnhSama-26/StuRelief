@@ -107,11 +107,12 @@ export default function Sidebar({
               href={item.path}
               onClick={onCloseMobile}
               title={isCollapsed ? item.label : undefined}
-              className={`flex items-center transition-all duration-200 group relative rounded-xl ${
-                isCollapsed ? 'justify-center w-full py-2.5 px-0' : 'gap-3.5 px-3 py-2.5 w-full'
+              aria-label={item.label}
+              className={`flex items-center transition-all duration-200 group relative rounded-xl transform-gpu active:scale-95 ${
+                isCollapsed ? 'justify-center mx-auto w-12 h-12 p-0 rounded-2xl' : 'gap-3.5 px-3 py-2.5 w-full'
               } ${
                 isItemActive
-                  ? 'bg-blue-600 text-white shadow-md shadow-blue-500/10 scale-102'
+                  ? `bg-blue-600 text-white shadow-md shadow-blue-500/10 ${isCollapsed ? '' : 'scale-102'}`
                   : 'hover:bg-zinc-100 dark:hover:bg-zinc-800/60 text-zinc-600 dark:text-zinc-400 hover:text-zinc-950 dark:hover:text-white'
               }`}
             >

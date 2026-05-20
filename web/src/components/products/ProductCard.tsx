@@ -1,8 +1,10 @@
 'use client';
 
 import React from 'react';
+import { Eye, Pencil, Trash2 } from 'lucide-react';
 import { Item } from '@/domain/entities/Item';
-import { Pencil, Trash2 } from 'lucide-react';
+import { aiImageUrl } from '@/lib/aiImage';
+import { PRODUCT_STATUS_CLASSES, PRODUCT_STATUS_LABELS } from '@shared';
 
 interface ProductCardProps {
   product: Item;
@@ -29,7 +31,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
       <div>
         <div className="aspect-square w-full overflow-hidden bg-zinc-100 dark:bg-zinc-800 relative">
           <img
-            src={product.images[0] || 'https://images.unsplash.com/photo-1543002588-bfa74002ed7e?q=80&w=400&auto=format&fit=crop'}
+            src={product.images[0] || aiImageUrl(`realistic AI student marketplace product photo of ${product.name}`, { width: 400, height: 400, seed: product.id })}
             alt={product.name}
             className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
             onClick={() => onDetail?.(product)}
@@ -40,6 +42,14 @@ const ProductCard: React.FC<ProductCardProps> = ({
             <div className="absolute top-3 left-3">
               <span className="bg-red-500 text-white text-[10px] font-bold px-2 py-1 rounded-full uppercase tracking-wider animate-pulse">
                 Thanh lý gấp
+              </span>
+            </div>
+          )}
+
+          {product.status !== 'AVAILABLE' && (
+            <div className="absolute top-3 left-3">
+              <span className={`text-[10px] font-bold px-2 py-1 rounded-full uppercase tracking-wider ${PRODUCT_STATUS_CLASSES[product.status]}`}>
+                {PRODUCT_STATUS_LABELS[product.status]}
               </span>
             </div>
           )}
@@ -70,31 +80,37 @@ const ProductCard: React.FC<ProductCardProps> = ({
       </div>
 
       <div className="p-4 pt-0">
-        <button
-          onClick={() => onDetail?.(product)}
-          className="w-full py-2 bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-800 dark:text-zinc-200 text-xs font-semibold rounded-xl transition-all"
-        >
-          Xem chi tiết
-        </button>
+        <div className={`flex items-center ${isMyProduct ? 'gap-2' : ''}`}>
+          <button
+            onClick={() => onDetail?.(product)}
+            className={`h-10 w-10 shrink-0 rounded-xl bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-800 dark:text-zinc-200 transition-all flex items-center justify-center`}
+            aria-label="Xem chi tiết"
+            title="Xem chi tiết"
+          >
+            <Eye className="w-4.5 h-4.5" />
+          </button>
 
-        {isMyProduct && (
-          <div className="grid grid-cols-2 gap-2 mt-2">
-            <button
-              onClick={() => onEdit?.(product)}
-              className="py-2 bg-blue-50 hover:bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:hover:bg-blue-900/50 dark:text-blue-400 text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-1"
-            >
-              <Pencil className="w-3.5 h-3.5" />
-              Sửa
-            </button>
-            <button
-              onClick={() => onDelete?.(product)}
-              className="py-2 bg-red-50 hover:bg-red-100 text-red-600 dark:bg-red-950/30 dark:hover:bg-red-950/50 dark:text-red-400 text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-1"
-            >
-              <Trash2 className="w-3.5 h-3.5" />
-              Xóa
-            </button>
-          </div>
-        )}
+          {isMyProduct && (
+            <>
+              <button
+                onClick={() => onEdit?.(product)}
+                className="h-10 w-10 shrink-0 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:hover:bg-blue-900/50 dark:text-blue-400 transition-all flex items-center justify-center"
+                aria-label="Sửa"
+                title="Sửa"
+              >
+                <Pencil className="w-4.5 h-4.5" />
+              </button>
+              <button
+                onClick={() => onDelete?.(product)}
+                className="h-10 w-10 shrink-0 rounded-xl bg-red-50 hover:bg-red-100 text-red-600 dark:bg-red-950/30 dark:hover:bg-red-950/50 dark:text-red-400 transition-all flex items-center justify-center"
+                aria-label="Xóa"
+                title="Xóa"
+              >
+                <Trash2 className="w-4.5 h-4.5" />
+              </button>
+            </>
+          )}
+        </div>
       </div>
     </div>
   );

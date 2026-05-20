@@ -35,15 +35,15 @@ export default function ProfileFooter({
                 ? 'border-red-200 dark:border-red-900/40 bg-red-600 text-white'
                 : 'border-zinc-200 dark:border-zinc-800 bg-blue-600 text-white'
             }`}>
-              {currentUser.role === 'ADMIN' ? (
-                <span>AD</span>
-              ) : currentUser.avatarUrl ? (
+              {currentUser.avatarUrl ? (
                 <img
                   src={currentUser.avatarUrl}
                   alt={currentUser.fullName}
                   referrerPolicy="no-referrer"
                   className="w-full h-full object-cover"
                 />
+              ) : currentUser.role === 'ADMIN' ? (
+                <span>AD</span>
               ) : (
                 <span>{currentUser.fullName.charAt(0).toUpperCase()}</span>
               )}
@@ -73,7 +73,7 @@ export default function ProfileFooter({
             <button
               onClick={onLogout}
               title="Đăng xuất"
-              className="p-2 rounded-xl hover:bg-zinc-200/60 dark:hover:bg-zinc-800 text-zinc-400 hover:text-rose-600 dark:hover:text-rose-400 transition-colors cursor-pointer"
+              className="p-2 rounded-xl hover:bg-zinc-200/60 dark:hover:bg-zinc-800 text-zinc-400 hover:text-rose-600 dark:hover:text-rose-400 transition-all duration-200 active:scale-95 transform-gpu cursor-pointer"
             >
               <LogOut className="w-4 h-4" />
             </button>

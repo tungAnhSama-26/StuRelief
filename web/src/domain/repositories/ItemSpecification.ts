@@ -24,7 +24,9 @@ export class FilterItemSpecification implements ItemSpecification {
 
     if (this.filters?.category && this.filters.category !== 'Tất cả danh mục' && this.filters.category !== 'All') {
       where.category = {
-        name: { equals: this.filters.category, mode: 'insensitive' },
+        is: {
+          name: { equals: this.filters.category, mode: 'insensitive' },
+        },
       };
     }
 
@@ -32,7 +34,7 @@ export class FilterItemSpecification implements ItemSpecification {
       where.sellerId = this.filters.studentId;
     }
 
-    if (this.filters?.status) {
+    if (this.filters?.status && this.filters.status !== 'ALL') {
       where.status = this.filters.status;
     }
 

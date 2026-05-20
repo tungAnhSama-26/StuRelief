@@ -1,3 +1,5 @@
+import { ProductStatus } from '../enums';
+
 export interface Item {
   id: string;
   name: string;
@@ -6,6 +8,7 @@ export interface Item {
   images: string[];
   studentId: string;
   isQuickSell: boolean;
+  status: ProductStatus;
   description?: string;
   createdAt: Date;
   updatedAt: Date;

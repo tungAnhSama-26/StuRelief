@@ -1,7 +1,8 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { Menu, X, Bell, Search, Sun, Moon, LogIn } from 'lucide-react';
 import Sidebar from './Sidebar';
 
@@ -10,6 +11,8 @@ interface DashboardLayoutProps {
   activeItemId?: string;
   pageTitle?: string;
 }
+
+const SIDEBAR_COLLAPSED_KEY = 'sturelief.dashboard.sidebar.collapsed';
 
 type SessionUser = {
   id: string;
@@ -24,16 +27,39 @@ export default function DashboardLayout({
   activeItemId,
   pageTitle = 'StuRelief Dashboard',
 }: DashboardLayoutProps) {
+  const pathname = usePathname();
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const [sidebarStateReady, setSidebarStateReady] = useState(false);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
   const [currentUser, setCurrentUser] = useState<SessionUser | null>(null);
   const [authLoaded, setAuthLoaded] = useState(false);
+  const mainScrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const isDark = document.documentElement.classList.contains('dark');
     setTheme(isDark ? 'dark' : 'light');
   }, []);
+
+  useEffect(() => {
+    try {
+      const storedCollapsed = window.localStorage.getItem(SIDEBAR_COLLAPSED_KEY);
+      if (storedCollapsed !== null) {
+        setIsCollapsed(storedCollapsed === '1');
+      }
+    } finally {
+      setSidebarStateReady(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!sidebarStateReady) return;
+    window.localStorage.setItem(SIDEBAR_COLLAPSED_KEY, isCollapsed ? '1' : '0');
+  }, [isCollapsed, sidebarStateReady]);
+
+  useEffect(() => {
+    mainScrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [pathname]);
 
   useEffect(() => {
     let cancelled = false;
@@ -64,7 +90,7 @@ export default function DashboardLayout({
     document.documentElement.classList.toggle('dark', newTheme === 'dark');
   };
 
-  const handleToggleCollapse = () => setIsCollapsed(!isCollapsed);
+  const handleToggleCollapse = () => setIsCollapsed((prev) => !prev);
   const showSidebar = authLoaded && Boolean(currentUser);
 
   return (
@@ -82,7 +108,7 @@ export default function DashboardLayout({
             <div className="absolute top-3.5 right-4 z-50">
               <button
                 onClick={() => setIsMobileOpen(false)}
-                className="p-2 rounded-xl bg-zinc-50 dark:bg-zinc-800 text-zinc-500 hover:text-zinc-800 dark:hover:text-white border border-zinc-200/50 dark:border-zinc-800 cursor-pointer"
+                className="p-2 rounded-xl bg-zinc-50 dark:bg-zinc-800 text-zinc-500 hover:text-zinc-800 dark:hover:text-white border border-zinc-200/50 dark:border-zinc-800 cursor-pointer transition-all duration-200 active:scale-95 transform-gpu"
               >
                 <X className="w-4.5 h-4.5" />
               </button>
@@ -99,14 +125,14 @@ export default function DashboardLayout({
               <>
                 <button
                   onClick={() => setIsMobileOpen(true)}
-                  className="lg:hidden p-2 rounded-xl bg-zinc-50 dark:bg-zinc-800 border border-zinc-200/50 dark:border-zinc-800 text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-700 cursor-pointer transition-colors"
+                  className="lg:hidden p-2 rounded-xl bg-zinc-50 dark:bg-zinc-800 border border-zinc-200/50 dark:border-zinc-800 text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-700 cursor-pointer transition-all duration-200 active:scale-95 transform-gpu"
                 >
                   <Menu className="w-5 h-5" />
                 </button>
 
                 <button
                   onClick={handleToggleCollapse}
-                  className="hidden lg:flex p-2 rounded-xl bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-200/50 dark:border-zinc-800/50 text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-700/50 cursor-pointer transition-colors"
+                  className="hidden lg:flex p-2 rounded-xl bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-200/50 dark:border-zinc-800/50 text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-700/50 cursor-pointer transition-all duration-200 active:scale-95 transform-gpu"
                   title={isCollapsed ? 'Mở rộng menu' : 'Thu nhỏ menu'}
                 >
                   <Menu className="w-4 h-4" />
@@ -135,13 +161,13 @@ export default function DashboardLayout({
 
                 <button
                   onClick={toggleTheme}
-                  className="p-2 rounded-xl bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-500 hover:text-zinc-900 dark:hover:text-white cursor-pointer transition-colors"
+                  className="p-2 rounded-xl bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-500 hover:text-zinc-900 dark:hover:text-white cursor-pointer transition-all duration-200 active:scale-95 transform-gpu"
                   title={theme === 'light' ? 'Chuyển tối' : 'Chuyển sáng'}
                 >
                   {theme === 'light' ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
                 </button>
 
-                <button className="p-2 rounded-xl bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-500 hover:text-zinc-900 dark:hover:text-white cursor-pointer relative transition-colors">
+                <button className="p-2 rounded-xl bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-500 hover:text-zinc-900 dark:hover:text-white cursor-pointer relative transition-all duration-200 active:scale-95 transform-gpu">
                   <Bell className="w-4 h-4" />
                   <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 bg-rose-500 rounded-full" />
                 </button>
@@ -149,7 +175,7 @@ export default function DashboardLayout({
             ) : (
               <Link
                 href="/login"
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-600 text-white text-sm font-medium hover:bg-blue-500 transition-colors shadow-md shadow-blue-500/20"
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-600 text-white text-sm font-medium hover:bg-blue-500 transition-all duration-200 active:scale-95 transform-gpu shadow-md shadow-blue-500/20"
               >
                 <LogIn className="w-4 h-4" />
                 <span>Đăng nhập</span>
@@ -158,8 +184,10 @@ export default function DashboardLayout({
           </div>
         </header>
 
-        <main className="flex-1 overflow-y-auto p-4 md:p-6 space-y-6 scrollbar-thin">
-          <div className="max-w-[1400px] mx-auto animate-page-transition">{children}</div>
+        <main ref={mainScrollRef} className="flex-1 overflow-y-auto p-4 md:p-6 space-y-6 scrollbar-thin scroll-smooth">
+          <div key={pathname} className="max-w-[1400px] mx-auto animate-page-transition motion-reduce:animate-none">
+            {children}
+          </div>
         </main>
       </div>
     </div>

@@ -53,6 +53,7 @@ export async function POST(request: Request) {
       email: user.email,
       role: user.role,
       fullName: user.profile?.fullName || 'Người dùng',
+      avatarUrl: user.profile?.avatarUrl || null,
     };
 
     const token = signToken(userData, env.JWT_SECRET, 86400);

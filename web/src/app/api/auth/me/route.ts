@@ -23,7 +23,7 @@ export async function GET() {
         email: payload.email,
         role: payload.role,
         fullName: payload.fullName,
-        avatarUrl: payload.role === 'ADMIN' ? null : payload.avatarUrl || null,
+        avatarUrl: payload.avatarUrl || null,
       },
     }, { status: 200 });
   } catch (error) {

@@ -99,7 +99,6 @@ export default function MeetingPointsPage() {
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
             <div>
               <h3 className="text-base font-semibold">Điểm Hẹn Giao Dịch An Toàn (Meeting Hubs)</h3>
-              <p className="text-[11px] text-zinc-400 mt-1">Các địa điểm công cộng thuộc khuôn viên trường có lắp đặt camera bảo vệ và nhiều người qua lại để sinh viên giao dịch trực tiếp.</p>
             </div>
             
             {/* Search Box */}

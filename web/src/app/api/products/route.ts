@@ -12,9 +12,11 @@ export async function GET(request: Request) {
     const limit = parseInt(searchParams.get('limit') ?? '8');
     const search = searchParams.get('search') || undefined;
     const category = searchParams.get('category') || undefined;
+    const studentId = searchParams.get('studentId') || undefined;
+    const status = searchParams.get('status') || (studentId ? 'ALL' : 'AVAILABLE');
 
     const useCase = new GetItemsUseCase(itemRepository);
-    const { items, total } = await useCase.execute(page, limit, { search, category });
+    const { items, total } = await useCase.execute(page, limit, { search, category, studentId, status });
 
     return NextResponse.json({
       data: items,
@@ -34,7 +36,7 @@ export async function POST(request: Request) {
   try {
     const body = await request.json();
     const useCase = new PostItemUseCase(itemRepository);
-    const newItem = await useCase.execute(body);
+    const newItem = await useCase.execute({ ...body, status: 'DRAFT' });
 
     return NextResponse.json(newItem, { status: 201 });
   } catch (error: any) {

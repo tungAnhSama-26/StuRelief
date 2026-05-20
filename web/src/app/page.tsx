@@ -8,7 +8,8 @@ import DashboardLayout from '@/layouts/dashboard/DashboardLayout';
 import prisma from '@/lib/prisma';
 import { verifyToken } from '@/lib/jwt';
 import { env } from '@/infrastructure/config/env';
-import { ChevronLeft, ChevronRight, Sparkles, ArrowUpRight, ShieldCheck, Zap, TrendingUp, MessageSquare } from 'lucide-react';
+import { ChevronLeft, ChevronRight, HeartHandshake, ArrowUpRight, ShieldCheck, Zap, TrendingUp, MessageSquare } from 'lucide-react';
+import type { Item } from '@shared/domain/Item';
 
 interface SearchParams {
   page?: string;
@@ -37,26 +38,36 @@ export default async function Home({
   const currentUser = token ? verifyToken(token, env.JWT_SECRET) : null;
   const currentUserId = currentUser?.id || 'guest';
 
-  const { items, total } = await getItemsUseCase.execute(page, limit, { search, category });
-  const totalPages = Math.ceil(total / limit);
+  let items: Item[] = [];
+  let total = 0;
+  let categoriesList: string[] = [];
+  let totalActivePosts = 0;
+  let myProductsCount = 0;
 
-  // Fetch categories dynamically from database
-  const dbCategories = await prisma.category.findMany({
-    orderBy: { name: 'asc' },
-  });
-  const categoriesList = dbCategories.map(c => c.name);
+  try {
+    const [catalogData, dbCategories, activePostsCount, sellerPostsCount] = await Promise.all([
+      getItemsUseCase.execute(page, limit, { search, category, status: 'AVAILABLE' }),
+      prisma.category.findMany({ orderBy: { name: 'asc' } }),
+      prisma.product.count({ where: { status: 'AVAILABLE' } }),
+      currentUser
+        ? prisma.product.count({
+            where: {
+              sellerId: currentUserId,
+            },
+          })
+        : Promise.resolve(0),
+    ]);
 
-  // Fetch statistics dynamically from database
-  const totalActivePosts = await prisma.product.count({
-    where: { status: 'AVAILABLE' },
-  });
+    items = catalogData.items;
+    total = catalogData.total;
+    categoriesList = dbCategories.map((c) => c.name);
+    totalActivePosts = activePostsCount;
+    myProductsCount = sellerPostsCount;
+  } catch (error) {
+    console.error('Home page DB fallback:', error);
+  }
 
-  const myProductsCount = currentUser ? await prisma.product.count({
-    where: {
-      status: 'AVAILABLE',
-      sellerId: currentUserId,
-    },
-  }) : 0;
+  const totalPages = Math.max(1, Math.ceil(total / limit));
 
   // Generate page numbers list for premium pagination
   const getPageNumbers = (current: number, total: number) => {
@@ -99,15 +110,15 @@ export default async function Home({
       <section className="pb-10">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-5 auto-rows-[190px]">
           {/* Main Large Card */}
-          <div className="md:col-span-2 md:row-span-2 rounded-[28px] bg-gradient-to-br from-blue-600 via-indigo-600 to-violet-700 p-8 flex flex-col justify-between text-white overflow-hidden relative group shadow-lg shadow-blue-500/10 border border-blue-500/20">
+          <div className="md:col-span-2 md:row-span-2 rounded-[28px] bg-gradient-to-br from-blue-600 via-blue-700 to-cyan-700 p-8 flex flex-col justify-between text-white overflow-hidden relative group shadow-lg shadow-blue-500/10 border border-blue-500/20">
             {/* Background glowing sphere */}
             <div className="absolute -top-12 -right-12 w-64 h-64 bg-white/10 rounded-full blur-2xl group-hover:scale-110 transition-transform duration-700 pointer-events-none" />
             <div className="absolute top-0 right-0 p-8 opacity-15 group-hover:rotate-12 group-hover:scale-105 transition-all duration-500 pointer-events-none">
-              <Sparkles className="w-48 h-48" />
+              <HeartHandshake className="w-48 h-48" />
             </div>
             
             <div className="w-12 h-12 rounded-2xl bg-white/15 border border-white/25 flex items-center justify-center backdrop-blur-md">
-              <Sparkles className="w-6 h-6 text-white" />
+              <HeartHandshake className="w-6 h-6 text-white" />
             </div>
 
             <div>
@@ -125,22 +136,22 @@ export default async function Home({
           </div>
 
           {/* Medium Tech Card */}
-          <div className="md:col-span-2 rounded-[28px] bg-zinc-950 border border-zinc-800 dark:border-zinc-800/80 p-6 flex flex-col justify-between group overflow-hidden relative shadow-sm">
+          <div className="md:col-span-2 rounded-[28px] bg-gradient-to-br from-slate-950 via-blue-950 to-blue-900 border border-blue-500/15 dark:border-blue-500/10 p-6 flex flex-col justify-between group overflow-hidden relative shadow-sm">
             {/* Grid Pattern Overlay */}
             <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px] opacity-30 pointer-events-none" />
-            <div className="absolute -bottom-10 -right-10 w-36 h-36 bg-blue-500/10 rounded-full blur-2xl pointer-events-none group-hover:bg-blue-500/15 transition-all duration-500" />
+            <div className="absolute -bottom-10 -right-10 w-36 h-36 bg-cyan-500/10 rounded-full blur-2xl pointer-events-none group-hover:bg-cyan-500/15 transition-all duration-500" />
 
             <div className="relative z-10">
-              <h2 className="text-xl font-semibold bg-gradient-to-r from-white via-zinc-200 to-zinc-400 bg-clip-text text-transparent mb-1.5 tracking-tight">Nền tảng chia sẻ đồ dùng</h2>
+              <h2 className="text-xl font-semibold bg-gradient-to-r from-white via-blue-100 to-cyan-200 bg-clip-text text-transparent mb-1.5 tracking-tight">Nền tảng chia sẻ đồ dùng</h2>
               <p className="text-zinc-400 text-xs leading-relaxed max-w-md">Trao đổi giáo trình, quần áo, xe cộ, đồ công nghệ tin cậy trong nội bộ các trường đại học.</p>
             </div>
             
             <div className="flex flex-wrap gap-2 relative z-10">
-              <div className="flex items-center gap-1.5 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[11px] px-3.5 py-1.5 rounded-full font-semibold">
+              <div className="flex items-center gap-1.5 bg-blue-500/10 text-blue-300 border border-blue-400/20 text-[11px] px-3.5 py-1.5 rounded-full font-semibold">
                 <ShieldCheck className="w-3.5 h-3.5" />
                 <span>100% Student Verified</span>
               </div>
-              <div className="flex items-center gap-1.5 bg-blue-500/10 text-blue-400 border border-blue-500/20 text-[11px] px-3.5 py-1.5 rounded-full font-semibold">
+              <div className="flex items-center gap-1.5 bg-cyan-500/10 text-cyan-300 border border-cyan-400/20 text-[11px] px-3.5 py-1.5 rounded-full font-semibold">
                 <Zap className="w-3.5 h-3.5" />
                 <span>An Toàn & Tiện Lợi</span>
               </div>
@@ -148,37 +159,37 @@ export default async function Home({
           </div>
 
           {/* Stat Card 1 - Active Posts */}
-          <div className="rounded-[28px] bg-gradient-to-br from-pink-500/8 to-rose-500/3 border border-pink-500/15 dark:border-pink-500/10 dark:bg-pink-950/10 p-6 flex flex-col justify-between relative overflow-hidden group shadow-sm hover:border-pink-500/30 transition-all duration-300">
-            <div className="absolute -right-4 -bottom-4 w-20 h-20 bg-pink-500/15 rounded-full blur-xl group-hover:scale-125 transition-transform duration-500 pointer-events-none" />
+          <div className="rounded-[28px] bg-gradient-to-br from-blue-500/8 to-cyan-500/4 border border-blue-500/15 dark:border-blue-500/10 dark:bg-blue-950/10 p-6 flex flex-col justify-between relative overflow-hidden group shadow-sm hover:border-blue-500/30 transition-all duration-300">
+            <div className="absolute -right-4 -bottom-4 w-20 h-20 bg-blue-500/15 rounded-full blur-xl group-hover:scale-125 transition-transform duration-500 pointer-events-none" />
             
-            <div className="w-8.5 h-8.5 rounded-xl bg-pink-500/10 border border-pink-500/20 flex items-center justify-center text-pink-500">
+            <div className="w-8.5 h-8.5 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-500">
               <TrendingUp className="w-4.5 h-4.5" />
             </div>
 
             <div>
-              <span className="text-3.5xl font-semibold text-pink-600 dark:text-pink-400 tracking-tight leading-none block">{totalActivePosts}+</span>
-              <span className="text-[10px] font-semibold uppercase tracking-wider text-pink-500/80 dark:text-pink-400/80 mt-1 block">HÔM NAY</span>
+              <span className="text-3.5xl font-semibold text-blue-600 dark:text-blue-400 tracking-tight leading-none block">{totalActivePosts}+</span>
+              <span className="text-[10px] font-semibold uppercase tracking-wider text-blue-500/80 dark:text-blue-400/80 mt-1 block">HÔM NAY</span>
               <span className="text-[11px] text-zinc-500 dark:text-zinc-400 font-medium block mt-0.5">Tin đăng hoạt động</span>
             </div>
           </div>
 
           {/* Stat Card 2 - Support */}
-          <div className="rounded-[28px] bg-gradient-to-br from-indigo-500/8 to-violet-500/3 border border-indigo-500/15 dark:border-indigo-500/10 dark:bg-indigo-950/10 p-6 flex flex-col justify-between relative overflow-hidden group shadow-sm hover:border-indigo-500/30 transition-all duration-300">
-            <div className="absolute -right-4 -bottom-4 w-20 h-20 bg-indigo-500/15 rounded-full blur-xl group-hover:scale-125 transition-transform duration-500 pointer-events-none" />
+          <div className="rounded-[28px] bg-gradient-to-br from-cyan-500/8 to-blue-500/4 border border-cyan-500/15 dark:border-cyan-500/10 dark:bg-cyan-950/10 p-6 flex flex-col justify-between relative overflow-hidden group shadow-sm hover:border-cyan-500/30 transition-all duration-300">
+            <div className="absolute -right-4 -bottom-4 w-20 h-20 bg-cyan-500/15 rounded-full blur-xl group-hover:scale-125 transition-transform duration-500 pointer-events-none" />
             
             <div className="flex justify-between items-center">
-              <div className="w-8.5 h-8.5 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-500">
+              <div className="w-8.5 h-8.5 rounded-xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center text-cyan-500">
                 <MessageSquare className="w-4.5 h-4.5" />
               </div>
-              <div className="flex items-center gap-1 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full text-[9px] font-semibold text-emerald-500">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              <div className="flex items-center gap-1 bg-blue-500/10 border border-blue-500/20 px-2 py-0.5 rounded-full text-[9px] font-semibold text-blue-500">
+                <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
                 <span>ONLINE</span>
               </div>
             </div>
 
             <div>
-              <span className="text-3.5xl font-semibold text-indigo-600 dark:text-indigo-400 tracking-tight leading-none block">24/7</span>
-              <span className="text-[10px] font-semibold uppercase tracking-wider text-indigo-500/80 dark:text-indigo-400/80 mt-1 block">HỖ TRỢ</span>
+              <span className="text-3.5xl font-semibold text-cyan-600 dark:text-cyan-400 tracking-tight leading-none block">24/7</span>
+              <span className="text-[10px] font-semibold uppercase tracking-wider text-cyan-500/80 dark:text-cyan-400/80 mt-1 block">HỖ TRỢ</span>
               <span className="text-[11px] text-zinc-500 dark:text-zinc-400 font-medium block mt-0.5">Tương tác trực tiếp</span>
             </div>
           </div>
