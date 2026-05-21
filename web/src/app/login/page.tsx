@@ -388,7 +388,7 @@ export default function LoginPage() {
                   id="remember-me"
                   type="checkbox"
                   defaultChecked
-                  className="w-4.5 h-4.5 text-blue-600 border-slate-300 dark:border-zinc-700 rounded focus:ring-blue-500"
+                  className="w-4.5 h-4.5 accent-white bg-white border-slate-300 dark:border-zinc-700 rounded focus:ring-white"
                 />
                 <label htmlFor="remember-me" className="ml-2 text-xs font-medium text-slate-500 dark:text-zinc-400">
                   Ghi nhớ đăng nhập

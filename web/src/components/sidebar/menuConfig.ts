@@ -1,14 +1,15 @@
 import {
-  Compass,
-  FileBadge,
   Activity,
-  Scale,
-  History,
-  Map,
-  UserCheck,
   Award,
   ClipboardCheck,
+  Compass,
+  FileBadge,
+  History,
   LucideIcon,
+  Map,
+  Package2,
+  Scale,
+  UserCheck,
 } from 'lucide-react';
 import { APP_ROUTES, UserRole } from '@shared';
 
@@ -26,30 +27,34 @@ export interface MenuGroup {
 
 export const getMenuGroups = (role: UserRole): MenuGroup[] => {
   const userItems = [
-    { id: 'catalog', label: 'Chợ Đồ Cũ Sinh Viên', icon: Compass, path: APP_ROUTES.HOME },
+    { id: 'catalog', label: 'Chợ đồ cũ sinh viên', icon: Compass, path: APP_ROUTES.HOME },
     ...(role === UserRole.ADMIN
       ? []
-      : [{ id: 'verification', label: 'Xác Thực Sinh Viên', icon: FileBadge, path: APP_ROUTES.VERIFICATION }]),
+      : [
+          { id: 'verification', label: 'Xác thực sinh viên', icon: FileBadge, path: APP_ROUTES.VERIFICATION },
+          { id: 'my-posts', label: 'Quản lý bài đăng', icon: Package2, path: APP_ROUTES.MY_POSTS },
+          { id: 'meeting-points', label: 'Điểm hẹn an toàn', icon: Map, path: APP_ROUTES.MEETING_POINTS },
+        ]),
   ];
 
   const userGroups: MenuGroup[] = [
     {
-      title: 'Mua Bán & Trao Đổi',
+      title: 'Mua bán & trao đổi',
       items: userItems,
     },
   ];
 
   const adminGroups: MenuGroup[] = [
     {
-      title: 'Hệ Thống Quản Trị',
+      title: 'Hệ thống quản trị',
       items: [
-        { id: 'dashboard', label: 'Dashboard Tổng Quan', icon: Activity, path: APP_ROUTES.ADMIN.DASHBOARD },
-        { id: 'approvals', label: 'Xác Thực Thẻ SV', icon: UserCheck, path: APP_ROUTES.ADMIN.APPROVALS },
-        { id: 'posts', label: 'Duyệt Bài Đăng', icon: ClipboardCheck, path: APP_ROUTES.ADMIN.POSTS },
-        { id: 'disputes', label: 'Xử Lý Tranh Chấp', icon: Scale, path: APP_ROUTES.ADMIN.DISPUTES },
-        { id: 'reputations', label: 'Uy Tín & Đánh Giá', icon: Award, path: APP_ROUTES.ADMIN.REPUTATION },
-        { id: 'audit-logs', label: 'Lịch Sử Hoạt Động', icon: History, path: APP_ROUTES.ADMIN.LOGS },
-        { id: 'meeting-points', label: 'Điểm Hẹn An Toàn', icon: Map, path: APP_ROUTES.ADMIN.MEETING_POINTS },
+        { id: 'dashboard', label: 'Dashboard tổng quan', icon: Activity, path: APP_ROUTES.ADMIN.DASHBOARD },
+        { id: 'approvals', label: 'Xác thực thẻ SV', icon: UserCheck, path: APP_ROUTES.ADMIN.APPROVALS },
+        { id: 'posts', label: 'Duyệt bài đăng', icon: ClipboardCheck, path: APP_ROUTES.ADMIN.POSTS },
+        { id: 'disputes', label: 'Xử lý tranh chấp', icon: Scale, path: APP_ROUTES.ADMIN.DISPUTES },
+        { id: 'reputations', label: 'Uy tín & đánh giá', icon: Award, path: APP_ROUTES.ADMIN.REPUTATION },
+        { id: 'audit-logs', label: 'Lịch sử hoạt động', icon: History, path: APP_ROUTES.ADMIN.LOGS },
+        { id: 'meeting-points', label: 'Điểm hẹn an toàn', icon: Map, path: APP_ROUTES.ADMIN.MEETING_POINTS },
       ],
     },
   ];

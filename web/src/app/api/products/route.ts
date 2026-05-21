@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { PrismaItemRepository } from '@/infrastructure/persistence/PrismaItemRepository';
 import { GetItemsUseCase } from '@/use-cases/items/GetItemsUseCase';
 import { PostItemUseCase } from '@/use-cases/items/PostItemUseCase';
+import { createUserNotification } from '@/lib/notifications';
 
 const itemRepository = new PrismaItemRepository();
 
@@ -37,6 +38,16 @@ export async function POST(request: Request) {
     const body = await request.json();
     const useCase = new PostItemUseCase(itemRepository);
     const newItem = await useCase.execute({ ...body, status: 'DRAFT' });
+
+    if (body.studentId) {
+      await createUserNotification({
+        userId: body.studentId,
+        title: 'Bài đăng đã được gửi',
+        content: `Bài đăng "${newItem.name}" của bạn đã được gửi và đang chờ admin duyệt.`,
+        type: 'SYSTEM',
+        link: `/products/${newItem.id}`,
+      });
+    }
 
     return NextResponse.json(newItem, { status: 201 });
   } catch (error: any) {

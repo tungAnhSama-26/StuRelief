@@ -1,14 +1,23 @@
 import { Suspense } from 'react';
 import Link from 'next/link';
 import { cookies } from 'next/headers';
-import { PrismaItemRepository } from '@/infrastructure/persistence/PrismaItemRepository';
-import { GetItemsUseCase } from '@/use-cases/items/GetItemsUseCase';
+import {
+  ChevronLeft,
+  ChevronRight,
+  HeartHandshake,
+  ArrowUpRight,
+  ShieldCheck,
+  Zap,
+  TrendingUp,
+  MessageSquare,
+} from 'lucide-react';
 import ProductDashboardWrapper from '@/components/products/ProductDashboardWrapper';
 import DashboardLayout from '@/layouts/dashboard/DashboardLayout';
 import prisma from '@/lib/prisma';
 import { verifyToken } from '@/lib/jwt';
 import { env } from '@/infrastructure/config/env';
-import { ChevronLeft, ChevronRight, HeartHandshake, ArrowUpRight, ShieldCheck, Zap, TrendingUp, MessageSquare } from 'lucide-react';
+import { PrismaItemRepository } from '@/infrastructure/persistence/PrismaItemRepository';
+import { GetItemsUseCase } from '@/use-cases/items/GetItemsUseCase';
 import type { Item } from '@shared/domain/Item';
 
 interface SearchParams {
@@ -32,7 +41,6 @@ export default async function Home({
   const search = params.search || undefined;
   const category = params.category || undefined;
 
-  // Get current user from cookie
   const cookieStore = await cookies();
   const token = cookieStore.get('token')?.value;
   const currentUser = token ? verifyToken(token, env.JWT_SECRET) : null;
@@ -69,27 +77,39 @@ export default async function Home({
 
   const totalPages = Math.max(1, Math.ceil(total / limit));
 
-  // Generate page numbers list for premium pagination
-  const getPageNumbers = (current: number, total: number) => {
+  const getPageNumbers = (current: number, totalPageCount: number) => {
     const pages: (number | string)[] = [];
-    if (total <= 7) {
-      for (let i = 1; i <= total; i++) {
+    if (totalPageCount <= 5) {
+      for (let i = 1; i <= totalPageCount; i += 1) {
         pages.push(i);
       }
-    } else {
-      pages.push(1);
-      if (current > 3) pages.push('...');
-
-      const start = Math.max(2, current - 1);
-      const end = Math.min(total - 1, current + 1);
-
-      for (let i = start; i <= end; i++) {
-        pages.push(i);
-      }
-
-      if (current < total - 2) pages.push('...');
-      pages.push(total);
+      return pages;
     }
+
+    if (current <= 5) {
+      for (let i = 1; i <= 5; i += 1) {
+        pages.push(i);
+      }
+      pages.push('...');
+      pages.push(totalPageCount);
+      return pages;
+    }
+
+    if (current >= totalPageCount - 4) {
+      pages.push(1);
+      pages.push('...');
+      for (let i = totalPageCount - 4; i <= totalPageCount; i += 1) {
+        pages.push(i);
+      }
+      return pages;
+    }
+
+    pages.push(1);
+    pages.push('...');
+    pages.push(current - 1, current, current + 1);
+    pages.push('...');
+    pages.push(totalPageCount);
+
     return pages;
   };
 
@@ -106,97 +126,129 @@ export default async function Home({
 
   return (
     <DashboardLayout activeItemId="catalog" pageTitle="Chợ Đồ Cũ Sinh Viên">
-      {/* Hero Section - Bento Grid Style */}
       <section className="pb-10">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-5 auto-rows-[190px]">
-          {/* Main Large Card */}
-          <div className="md:col-span-2 md:row-span-2 rounded-[28px] bg-gradient-to-br from-blue-600 via-blue-700 to-cyan-700 p-8 flex flex-col justify-between text-white overflow-hidden relative group shadow-lg shadow-blue-500/10 border border-blue-500/20">
-            {/* Background glowing sphere */}
-            <div className="absolute -top-12 -right-12 w-64 h-64 bg-white/10 rounded-full blur-2xl group-hover:scale-110 transition-transform duration-700 pointer-events-none" />
-            <div className="absolute top-0 right-0 p-8 opacity-15 group-hover:rotate-12 group-hover:scale-105 transition-all duration-500 pointer-events-none">
-              <HeartHandshake className="w-48 h-48" />
-            </div>
-            
-            <div className="w-12 h-12 rounded-2xl bg-white/15 border border-white/25 flex items-center justify-center backdrop-blur-md">
-              <HeartHandshake className="w-6 h-6 text-white" />
+        <div className="grid grid-cols-1 gap-5 md:grid-cols-4 auto-rows-[190px]">
+          <div className="relative overflow-hidden rounded-[28px] border border-blue-500/20 bg-gradient-to-br from-blue-600 via-blue-700 to-cyan-700 p-8 text-white shadow-lg shadow-blue-500/10 group md:col-span-2 md:row-span-2 flex flex-col justify-between">
+            <div className="pointer-events-none absolute -top-12 -right-12 h-64 w-64 rounded-full bg-white/10 blur-2xl transition-transform duration-700 group-hover:scale-110" />
+            <div className="pointer-events-none absolute top-0 right-0 p-8 opacity-15 transition-all duration-500 group-hover:rotate-12 group-hover:scale-105">
+              <HeartHandshake className="h-48 w-48" />
             </div>
 
-            <div>
-              <h1 className="text-3.5xl font-black mb-3 tracking-tight leading-tight">Chợ đồ cũ<br />sinh viên</h1>
-              <p className="text-blue-100 max-w-sm text-[14px] leading-relaxed font-medium">Nơi kết nối và thanh lý đồ dùng học tập giá tốt nhất cho cộng đồng sinh viên.</p>
-              
-              <Link 
-                href="/?category=Tất cả danh mục" 
-                className="mt-5 flex items-center gap-2 bg-white text-blue-700 px-4.5 py-2.5 rounded-xl w-fit text-xs font-bold shadow-md hover:shadow-lg hover:bg-zinc-50 active:scale-98 transition-all cursor-pointer group/btn"
-              >
-                <span>Khám phá ngay</span>
-                <ArrowUpRight className="w-4 h-4 group-hover/btn:translate-x-0.5 group-hover/btn:-translate-y-0.5 transition-transform duration-200" />
-              </Link>
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-white/25 bg-white/15 backdrop-blur-md">
+              <HeartHandshake className="h-6 w-6 text-white" />
             </div>
-          </div>
 
-          {/* Medium Tech Card */}
-          <div className="md:col-span-2 rounded-[28px] bg-gradient-to-br from-slate-950 via-blue-950 to-blue-900 border border-blue-500/15 dark:border-blue-500/10 p-6 flex flex-col justify-between group overflow-hidden relative shadow-sm">
-            {/* Grid Pattern Overlay */}
-            <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px] opacity-30 pointer-events-none" />
-            <div className="absolute -bottom-10 -right-10 w-36 h-36 bg-cyan-500/10 rounded-full blur-2xl pointer-events-none group-hover:bg-cyan-500/15 transition-all duration-500" />
+            <div className="grid gap-3 lg:grid-cols-4">
+              <h1 className="whitespace-nowrap text-[clamp(1.7rem,2.8vw,2.4rem)] font-black leading-none tracking-tight lg:col-span-4">
+                Chợ đồ cũ sinh viên
+              </h1>
+              <p className="max-w-xl text-[clamp(0.72rem,1vw,0.9rem)] font-medium leading-tight text-blue-100 lg:col-span-4">
+                Nơi kết nối và thanh lý đồ dùng học tập giá tốt nhất cho cộng đồng sinh viên.
+                Mua bán nhanh chóng, an toàn và đáng tin cậy trong mạng lưới nội bộ.
+              </p>
 
-            <div className="relative z-10">
-              <h2 className="text-xl font-semibold bg-gradient-to-r from-white via-blue-100 to-cyan-200 bg-clip-text text-transparent mb-1.5 tracking-tight">Nền tảng chia sẻ đồ dùng</h2>
-              <p className="text-zinc-400 text-xs leading-relaxed max-w-md">Trao đổi giáo trình, quần áo, xe cộ, đồ công nghệ tin cậy trong nội bộ các trường đại học.</p>
-            </div>
-            
-            <div className="flex flex-wrap gap-2 relative z-10">
-              <div className="flex items-center gap-1.5 bg-blue-500/10 text-blue-300 border border-blue-400/20 text-[11px] px-3.5 py-1.5 rounded-full font-semibold">
-                <ShieldCheck className="w-3.5 h-3.5" />
-                <span>100% Student Verified</span>
-              </div>
-              <div className="flex items-center gap-1.5 bg-cyan-500/10 text-cyan-300 border border-cyan-400/20 text-[11px] px-3.5 py-1.5 rounded-full font-semibold">
-                <Zap className="w-3.5 h-3.5" />
-                <span>An Toàn & Tiện Lợi</span>
+              <div className="mt-2 grid grid-cols-2 gap-3 sm:grid-cols-4 lg:col-span-4">
+                <div className="inline-flex min-w-0 items-center gap-2 rounded-2xl bg-white/10 px-2.5 py-2 text-[11px] font-semibold text-white/90 lg:text-xs">
+                  <ShieldCheck className="h-4 w-4 shrink-0 text-cyan-200" />
+                  <span>An toàn xác thực</span>
+                </div>
+                <div className="inline-flex min-w-0 items-center gap-2 rounded-2xl bg-white/10 px-2.5 py-2 text-[11px] font-semibold text-white/90 lg:text-xs">
+                  <Zap className="h-4 w-4 shrink-0 text-cyan-200" />
+                  <span>Giao dịch nhanh</span>
+                </div>
+                <div className="inline-flex min-w-0 items-center gap-2 rounded-2xl bg-white/10 px-2.5 py-2 text-[11px] font-semibold text-white/90 lg:text-xs">
+                  <TrendingUp className="h-4 w-4 shrink-0 text-cyan-200" />
+                  <span>Giá tốt cho sinh viên</span>
+                </div>
+                <Link
+                  href="/?category=Tất cả danh mục"
+                  className="inline-flex w-full min-w-0 items-center justify-center gap-2 rounded-2xl bg-white px-3 py-2 text-[11px] font-bold text-blue-700 shadow-md transition-all hover:bg-zinc-50 hover:shadow-lg active:scale-[0.98] lg:text-xs"
+                >
+                  <span>Khám phá ngay</span>
+                  <ArrowUpRight className="h-4 w-4 shrink-0 transition-transform duration-200 group-hover/btn:translate-x-0.5 group-hover/btn:-translate-y-0.5" />
+                </Link>
               </div>
             </div>
           </div>
 
-          {/* Stat Card 1 - Active Posts */}
-          <div className="rounded-[28px] bg-gradient-to-br from-blue-500/8 to-cyan-500/4 border border-blue-500/15 dark:border-blue-500/10 dark:bg-blue-950/10 p-6 flex flex-col justify-between relative overflow-hidden group shadow-sm hover:border-blue-500/30 transition-all duration-300">
-            <div className="absolute -right-4 -bottom-4 w-20 h-20 bg-blue-500/15 rounded-full blur-xl group-hover:scale-125 transition-transform duration-500 pointer-events-none" />
-            
-            <div className="w-8.5 h-8.5 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-500">
-              <TrendingUp className="w-4.5 h-4.5" />
-            </div>
+          <div className="relative overflow-hidden rounded-[28px] border border-blue-500/15 bg-gradient-to-br from-slate-950 via-blue-950 to-blue-900 p-6 shadow-sm group md:col-span-2 flex flex-col justify-start dark:border-blue-500/10">
+            <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px] opacity-30" />
+            <div className="pointer-events-none absolute -right-10 -bottom-10 h-36 w-36 rounded-full bg-cyan-500/10 blur-2xl transition-all duration-500 group-hover:bg-cyan-500/15" />
 
-            <div>
-              <span className="text-3.5xl font-semibold text-blue-600 dark:text-blue-400 tracking-tight leading-none block">{totalActivePosts}+</span>
-              <span className="text-[10px] font-semibold uppercase tracking-wider text-blue-500/80 dark:text-blue-400/80 mt-1 block">HÔM NAY</span>
-              <span className="text-[11px] text-zinc-500 dark:text-zinc-400 font-medium block mt-0.5">Tin đăng hoạt động</span>
+            <div className="relative z-10 pt-4 md:pt-2">
+              <h2 className="mb-2 bg-gradient-to-r from-white via-blue-100 to-cyan-200 bg-clip-text text-[clamp(1.05rem,1.6vw,1.25rem)] font-semibold tracking-tight text-transparent">
+                Nền tảng chia sẻ đồ dùng
+              </h2>
+              <p className="max-w-xl text-[clamp(0.65rem,0.9vw,0.75rem)] leading-tight text-zinc-400">
+                Trao đổi giáo trình, quần áo, xe cộ, đồ công nghệ tin cậy trong nội bộ các trường đại học.
+              </p>
+
+              <div className="mt-4 grid grid-cols-3 gap-2.5">
+                <div className="flex items-center gap-2 whitespace-nowrap rounded-2xl border border-white/10 bg-white/5 px-3 py-2.5 text-[12px] font-medium text-white/92">
+                  <HeartHandshake className="h-4 w-4 shrink-0 text-cyan-200" />
+                  <span>Đồng đội SV</span>
+                </div>
+                <div className="flex items-center gap-2 whitespace-nowrap rounded-2xl border border-white/10 bg-white/5 px-3 py-2.5 text-[12px] font-medium text-white/92">
+                  <TrendingUp className="h-4 w-4 shrink-0 text-cyan-200" />
+                  <span>Duyệt tin nhanh</span>
+                </div>
+                <div className="flex items-center gap-2 whitespace-nowrap rounded-2xl border border-white/10 bg-white/5 px-3 py-2.5 text-[12px] font-medium text-white/92">
+                  <MessageSquare className="h-4 w-4 shrink-0 text-cyan-200" />
+                  <span>Phản hồi 24/7</span>
+                </div>
+              </div>
             </div>
           </div>
 
-          {/* Stat Card 2 - Support */}
-          <div className="rounded-[28px] bg-gradient-to-br from-cyan-500/8 to-blue-500/4 border border-cyan-500/15 dark:border-cyan-500/10 dark:bg-cyan-950/10 p-6 flex flex-col justify-between relative overflow-hidden group shadow-sm hover:border-cyan-500/30 transition-all duration-300">
-            <div className="absolute -right-4 -bottom-4 w-20 h-20 bg-cyan-500/15 rounded-full blur-xl group-hover:scale-125 transition-transform duration-500 pointer-events-none" />
-            
-            <div className="flex justify-between items-center">
-              <div className="w-8.5 h-8.5 rounded-xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center text-cyan-500">
-                <MessageSquare className="w-4.5 h-4.5" />
+          <div className="relative overflow-hidden rounded-[28px] border border-blue-400/25 bg-gradient-to-br from-white via-blue-50 to-cyan-100/80 p-6 shadow-[0_18px_40px_-24px_rgba(37,99,235,0.45)] transition-all duration-300 hover:-translate-y-0.5 group flex flex-col justify-between dark:border-blue-500/20 dark:from-blue-950/30 dark:via-blue-950/40 dark:to-cyan-950/30">
+            <div className="absolute inset-x-0 top-0 h-1.5 bg-gradient-to-r from-blue-500 via-cyan-400 to-blue-300" />
+            <div className="pointer-events-none absolute -right-6 -bottom-6 h-24 w-24 rounded-full bg-blue-500/20 blur-2xl transition-transform duration-500 group-hover:scale-125" />
+
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-blue-500/20 bg-blue-500/12 text-blue-600 shadow-sm dark:text-blue-300">
+                <TrendingUp className="h-5 w-5" />
               </div>
-              <div className="flex items-center gap-1 bg-blue-500/10 border border-blue-500/20 px-2 py-0.5 rounded-full text-[9px] font-semibold text-blue-500">
-                <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
-                <span>ONLINE</span>
+              <div className="rounded-full border border-blue-500/15 bg-white/80 px-2.5 py-1 text-[10px] font-semibold text-blue-600 dark:bg-white/10 dark:text-blue-300">
+                Đang mở
               </div>
             </div>
 
-            <div>
-              <span className="text-3.5xl font-semibold text-cyan-600 dark:text-cyan-400 tracking-tight leading-none block">24/7</span>
-              <span className="text-[10px] font-semibold uppercase tracking-wider text-cyan-500/80 dark:text-cyan-400/80 mt-1 block">HỖ TRỢ</span>
-              <span className="text-[11px] text-zinc-500 dark:text-zinc-400 font-medium block mt-0.5">Tương tác trực tiếp</span>
+            <div className="space-y-2">
+              <span className="block text-4xl font-black leading-none tracking-tight text-blue-600 dark:text-blue-300">
+                {totalActivePosts}+
+              </span>
+              <p className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                Tin đăng đang hoạt động trong chợ
+              </p>
+            </div>
+          </div>
+
+          <div className="relative overflow-hidden rounded-[28px] border border-cyan-400/30 bg-gradient-to-br from-cyan-50 via-sky-50 to-white p-6 shadow-[0_18px_40px_-24px_rgba(6,182,212,0.45)] transition-all duration-300 hover:-translate-y-0.5 group flex flex-col justify-between dark:border-cyan-500/20 dark:from-cyan-950/30 dark:via-sky-950/30 dark:to-zinc-950">
+            <div className="absolute inset-x-0 top-0 h-1.5 bg-gradient-to-r from-cyan-400 via-sky-400 to-blue-400" />
+            <div className="pointer-events-none absolute -left-8 -bottom-8 h-28 w-28 rounded-full bg-cyan-400/20 blur-2xl transition-transform duration-500 group-hover:scale-125" />
+
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-cyan-500/20 bg-cyan-500/12 text-cyan-600 shadow-sm dark:text-cyan-300">
+                <MessageSquare className="h-5 w-5" />
+              </div>
+              <div className="flex items-center gap-1.5 rounded-full border border-cyan-500/15 bg-white/80 px-2.5 py-1 text-[10px] font-semibold text-cyan-600 dark:bg-white/10 dark:text-cyan-300">
+                <span className="h-1.5 w-1.5 rounded-full bg-cyan-500 animate-pulse" />
+                <span>Online</span>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <span className="block text-4xl font-black leading-none tracking-tight text-cyan-600 dark:text-cyan-300">
+                24/7
+              </span>
+              <p className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                Hỗ trợ và phản hồi luôn sẵn sàng
+              </p>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Main Content - Product Dashboard */}
       <main className="pb-20">
         <Suspense fallback={<GridSkeleton />}>
           <ProductDashboardWrapper
@@ -210,19 +262,18 @@ export default async function Home({
             categories={categoriesList}
           />
 
-          {/* Pagination Controls */}
           {totalPages > 1 && (
             <div className="mt-12 flex items-center justify-center gap-1 md:gap-2">
-              {/* Prev Button */}
               <Link
                 href={buildPageUrl(Math.max(1, page - 1))}
-                className={`w-10 h-10 flex items-center justify-center rounded-xl border border-zinc-200 dark:border-zinc-800 hover:bg-zinc-150 dark:hover:bg-zinc-900 transition-all text-zinc-500 dark:text-zinc-400 ${page === 1 ? 'pointer-events-none opacity-40' : ''}`}
+                className={`w-10 h-10 flex items-center justify-center rounded-xl border border-zinc-200 dark:border-zinc-800 hover:bg-zinc-150 dark:hover:bg-zinc-900 transition-all text-zinc-500 dark:text-zinc-400 ${
+                  page === 1 ? 'pointer-events-none opacity-40' : ''
+                }`}
                 aria-label="Trang trước"
               >
                 <ChevronLeft className="w-5 h-5" />
               </Link>
 
-              {/* Page Numbers */}
               {pageNumbers.map((p, idx) => {
                 if (p === '...') {
                   return (
@@ -253,10 +304,11 @@ export default async function Home({
                 );
               })}
 
-              {/* Next Button */}
               <Link
                 href={buildPageUrl(Math.min(totalPages, page + 1))}
-                className={`w-10 h-10 flex items-center justify-center rounded-xl border border-zinc-200 dark:border-zinc-800 hover:bg-zinc-150 dark:hover:bg-zinc-900 transition-all text-zinc-500 dark:text-zinc-400 ${page === totalPages ? 'pointer-events-none opacity-40' : ''}`}
+                className={`w-10 h-10 flex items-center justify-center rounded-xl border border-zinc-200 dark:border-zinc-800 hover:bg-zinc-150 dark:hover:bg-zinc-900 transition-all text-zinc-500 dark:text-zinc-400 ${
+                  page === totalPages ? 'pointer-events-none opacity-40' : ''
+                }`}
                 aria-label="Trang sau"
               >
                 <ChevronRight className="w-5 h-5" />
@@ -273,7 +325,7 @@ function GridSkeleton() {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
       {[...Array(8)].map((_, i) => (
-        <div key={i} className="animate-pulse bg-zinc-200 dark:bg-zinc-800 h-80 rounded-2xl"></div>
+        <div key={i} className="h-80 animate-pulse rounded-2xl bg-zinc-200 dark:bg-zinc-800" />
       ))}
     </div>
   );

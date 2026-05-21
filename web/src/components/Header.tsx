@@ -66,7 +66,6 @@ export default function Header() {
           </div>
           <div className="flex flex-col">
             <span className="font-black text-lg tracking-wide uppercase text-zinc-950 dark:text-white leading-none">StuRelief</span>
-            <span className="text-[10px] font-bold text-zinc-400 dark:text-zinc-500 tracking-wider uppercase mt-0.5">Campus Exchange</span>
           </div>
         </Link>
 
@@ -100,7 +99,6 @@ export default function Header() {
                 </div>
                 
                 <div className="hidden sm:flex flex-col items-end">
-                  <span className="text-xs text-zinc-400 dark:text-zinc-500 font-semibold">Xin chào,</span>
                   <span className="text-sm font-bold text-zinc-900 dark:text-white leading-tight">
                     {currentUser.fullName}
                   </span>

@@ -79,9 +79,6 @@ export default function Sidebar({
               <span className="font-black text-sm tracking-wider uppercase text-zinc-950 dark:text-white leading-none">
                 StuRelief
               </span>
-              <span className="text-[9px] font-bold text-zinc-400 dark:text-zinc-500 tracking-wider uppercase mt-1">
-                Student Exchange
-              </span>
             </div>
           )}
         </Link>
