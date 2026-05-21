@@ -36,15 +36,23 @@ export default function ProfileFooter({ currentUser, isCollapsed, onLogout }: Pr
             </div>
             {!isCollapsed && (
               <div className="flex flex-col min-w-0 animate-fade-in">
-                <div className="flex items-center gap-2">
-                  <span className="text-[12px] font-extrabold text-zinc-900 dark:text-white truncate">
+                <div className="flex flex-col">
+                  <span className="text-[13px] font-medium text-zinc-900 dark:text-white truncate">
                     {currentUser.fullName}
                   </span>
-                  <span className={`text-[8px] px-1 py-0.5 rounded font-black tracking-wider uppercase ${currentUser.role === 'ADMIN' ? 'bg-red-500/10 text-red-600 dark:text-red-400' : 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'}`}>
-                    {currentUser.role === 'ADMIN' ? 'Admin' : 'User'}
+                  <span className="text-[11px] text-zinc-500 dark:text-zinc-400 truncate mt-0.5">
+                    {currentUser.email}
                   </span>
+                  {currentUser.role && (
+                    <span className={`text-[10px] font-semibold uppercase tracking-wider mt-0.5 ${
+                      currentUser.role === 'ADMIN' 
+                        ? 'text-red-600 dark:text-red-400' 
+                        : 'text-blue-600 dark:text-blue-400'
+                    }`}>
+                      {currentUser.role === 'ADMIN' ? 'ADMIN' : 'USER'}
+                    </span>
+                  )}
                 </div>
-                <span className="text-[9px] text-zinc-400 dark:text-zinc-500 truncate mt-0.5">{currentUser.email}</span>
               </div>
             )}
           </div>
@@ -73,7 +81,6 @@ export default function ProfileFooter({ currentUser, isCollapsed, onLogout }: Pr
             <Link href="/login" className="text-xs font-black text-blue-600 dark:text-blue-400 hover:underline block truncate">
               Đăng nhập Google
             </Link>
-            <span className="text-[9px] text-zinc-400 dark:text-zinc-500 block mt-0.5 truncate">Chưa đăng nhập</span>
           </div>
         )}
       </div>

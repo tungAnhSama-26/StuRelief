@@ -1,8 +1,9 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { AlertCircle, Check, MessageSquare, PackageOpen, X } from 'lucide-react';
+import { createPortal } from 'react-dom';
+import { usePathname, useRouter } from 'next/navigation';
+import { AlertCircle, Check, MessageSquare, PackageOpen, X, XCircle } from 'lucide-react';
 import { Item } from '@/domain/entities/Item';
 import { PRODUCT_STATUS_CLASSES, PRODUCT_STATUS_LABELS } from '@shared';
 import ProductCard from './ProductCard';
@@ -19,6 +20,8 @@ interface ProductDashboardWrapperProps {
   search?: string;
   category?: string;
   categories: string[];
+  basePath?: string;
+  initialTab?: 'all' | 'my';
 }
 
 const ProductDashboardWrapper: React.FC<ProductDashboardWrapperProps> = ({
@@ -32,10 +35,11 @@ const ProductDashboardWrapper: React.FC<ProductDashboardWrapperProps> = ({
   categories,
 }) => {
   const router = useRouter();
+  const pathname = usePathname();
   const [items, setItems] = useState<Item[]>(initialItems);
   const [totalCount, setTotalCount] = useState(total);
   const [myTotalCount, setMyTotalCount] = useState(myTotal);
-  const [activeTab, setActiveTab] = useState<'all' | 'my'>('all');
+  const [activeTab, setActiveTab] = useState<'all' | 'my'>(pathname === '/my-posts' ? 'my' : 'all');
   const [currentUser, setCurrentUser] = useState<{ id: string; email: string; role: 'STUDENT' | 'ADMIN'; fullName: string } | null>(null);
 
   const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -49,6 +53,11 @@ const ProductDashboardWrapper: React.FC<ProductDashboardWrapperProps> = ({
   const [formDescription, setFormDescription] = useState('');
   const [formImage, setFormImage] = useState('');
   const [feedback, setFeedback] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     setItems((prev) => {
@@ -291,6 +300,7 @@ const ProductDashboardWrapper: React.FC<ProductDashboardWrapperProps> = ({
         initialLimit={limit}
         onOpenCreateModal={handleOpenCreate}
         categories={categories}
+        basePath={pathname}
       />
 
       {displayedItems.length === 0 && (
@@ -315,15 +325,15 @@ const ProductDashboardWrapper: React.FC<ProductDashboardWrapperProps> = ({
             onDetail={handleOpenDetail}
             onEdit={handleOpenEdit}
             onDelete={handleOpenDelete}
-            isMyProduct={product.studentId === currentUser?.id || currentUser?.role === 'ADMIN'}
+            showActions={pathname === '/my-posts' && (product.studentId === currentUser?.id || currentUser?.role === 'ADMIN')}
           />
         ))}
       </div>
 
-      {isDetailOpen && selectedProduct && (
+      {mounted && isDetailOpen && selectedProduct && createPortal(
         <div className="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4 py-6 bg-black/60 backdrop-blur-sm transition-all">
-          <div className="relative bg-white dark:bg-zinc-900 w-full max-w-3xl rounded-3xl overflow-hidden shadow-2xl border border-zinc-200 dark:border-zinc-800 animate-scale-up max-h-[90vh] overflow-y-auto">
-            <div className="relative h-56 md:h-72 w-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center p-4">
+          <div className="relative bg-white dark:bg-zinc-900 w-full max-w-4xl rounded-3xl overflow-hidden shadow-2xl border border-zinc-200 dark:border-zinc-800 animate-scale-up max-h-[90vh] overflow-y-auto md:grid md:grid-cols-[1.08fr_0.92fr]">
+            <div className="relative min-h-64 md:min-h-[560px] w-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center p-6 md:p-8">
               <img
                 src={selectedProduct.images[0] || aiImageUrl(`realistic AI student marketplace product photo of ${selectedProduct.name}`, { width: 600, height: 600, seed: selectedProduct.id })}
                 alt={selectedProduct.name}
@@ -336,7 +346,7 @@ const ProductDashboardWrapper: React.FC<ProductDashboardWrapperProps> = ({
                 <X className="w-6 h-6" />
               </button>
             </div>
-            <div className="p-6 md:p-8">
+            <div className="p-6 md:p-10 flex flex-col justify-center">
               <div className="flex flex-wrap gap-2 mb-4">
                 <span className="bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 text-xs font-bold px-3 py-1.5 rounded-full">
                   {selectedProduct.category}
@@ -354,12 +364,12 @@ const ProductDashboardWrapper: React.FC<ProductDashboardWrapperProps> = ({
               </p>
               <hr className="border-zinc-200 dark:border-zinc-800 my-4" />
               <div className="mb-6">
-                <h4 className="text-sm font-bold text-zinc-900 dark:text-zinc-100 mb-2 uppercase tracking-wide">Mô tả chi tiết</h4>
+                <h4 className="text-sm font-bold text-zinc-900 dark:text-zinc-100 mb-2 tracking-tight">Mô tả chi tiết</h4>
                 <p className="text-zinc-600 dark:text-zinc-300 text-sm whitespace-pre-line leading-relaxed">
                   {selectedProduct.description || 'Chủ bài đăng không cung cấp mô tả thêm cho sản phẩm này.'}
                 </p>
               </div>
-              <div className="flex flex-col sm:flex-row gap-3">
+              <div className="flex flex-col gap-3 md:pt-2">
                 <button
                   onClick={() => {
                     setIsDetailOpen(false);
@@ -374,27 +384,40 @@ const ProductDashboardWrapper: React.FC<ProductDashboardWrapperProps> = ({
                   onClick={() => setIsDetailOpen(false)}
                   className="py-3 px-6 bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-800 dark:text-zinc-200 font-bold rounded-2xl text-sm transition-all"
                 >
+                  <span className="mr-2 inline-flex align-middle">
+                    <XCircle className="h-4 w-4" />
+                  </span>
                   Đóng lại
                 </button>
               </div>
             </div>
           </div>
         </div>
-      )}
+      , document.body)}
 
-      {isCreateOpen && (
-        <div className="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4 py-6 bg-black/60 backdrop-blur-sm transition-all">
-          <div className="bg-white dark:bg-zinc-900 w-full max-w-lg rounded-3xl overflow-hidden shadow-2xl border border-zinc-200 dark:border-zinc-800 animate-scale-up max-h-[90vh] overflow-y-auto">
-            <div className="p-6 md:p-8">
-              <div className="flex justify-between items-center mb-6">
-                <h2 className="text-xl font-extrabold text-zinc-950 dark:text-white">Đăng bán sản phẩm mới</h2>
-                <button onClick={() => setIsCreateOpen(false)} className="p-1 hover:bg-zinc-100 dark:hover:bg-zinc-850 rounded-full text-zinc-500 transition-all">
-                  <X className="w-6 h-6" />
-                </button>
+      {mounted && isCreateOpen && createPortal(
+        <div className="fixed inset-0 z-50 overflow-y-auto flex items-start justify-center px-4 pt-20 pb-6 bg-black/60 backdrop-blur-sm transition-all">
+          <div className="relative bg-white dark:bg-zinc-900 w-full max-w-4xl rounded-3xl overflow-hidden shadow-2xl border border-zinc-200 dark:border-zinc-800 animate-scale-up max-h-[calc(100vh-5rem)] overflow-y-auto md:grid md:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)]">
+            <button
+              onClick={() => setIsCreateOpen(false)}
+              className="absolute top-4 right-4 z-10 p-2 rounded-full bg-zinc-500/90 hover:bg-zinc-600 text-white transition-all"
+            >
+              <X className="w-6 h-6" />
+            </button>
+
+            <div className="border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50/90 dark:bg-zinc-950/40 p-6 md:p-8 md:border-b-0 md:border-r flex flex-col justify-center">
+              <div>
+                <ImageUpload value={formImage} onChange={setFormImage} />
+              </div>
+            </div>
+
+            <div className="min-w-0 p-6 md:p-8 flex flex-col justify-center">
+              <div className="mb-6">
+                <h2 className="text-2xl font-extrabold text-zinc-950 dark:text-white">Đăng bán sản phẩm mới</h2>
               </div>
               <form onSubmit={handleCreateSubmit} className="space-y-4">
                 <div>
-                  <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-2 uppercase">Tên sản phẩm *</label>
+                  <label className="block text-xs font-bold text-zinc-950 dark:text-zinc-100 mb-2 tracking-tight">Tên sản phẩm *</label>
                   <input
                     type="text"
                     required
@@ -406,7 +429,7 @@ const ProductDashboardWrapper: React.FC<ProductDashboardWrapperProps> = ({
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-2 uppercase">Giá bán (VND) *</label>
+                    <label className="block text-xs font-bold text-zinc-950 dark:text-zinc-100 mb-2 tracking-tight">Giá bán (VND) *</label>
                     <input
                       type="text"
                       required
@@ -420,7 +443,7 @@ const ProductDashboardWrapper: React.FC<ProductDashboardWrapperProps> = ({
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-2 uppercase">Danh mục *</label>
+                    <label className="block text-xs font-bold text-zinc-950 dark:text-zinc-100 mb-2 tracking-tight">Danh mục *</label>
                     <select
                       value={formCategory}
                       onChange={(e) => setFormCategory(e.target.value)}
@@ -433,7 +456,7 @@ const ProductDashboardWrapper: React.FC<ProductDashboardWrapperProps> = ({
                   </div>
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-2 uppercase">Mô tả thêm</label>
+                  <label className="block text-xs font-bold text-zinc-950 dark:text-zinc-100 mb-2 tracking-tight">Mô tả thêm</label>
                   <textarea
                     rows={3}
                     value={formDescription}
@@ -441,9 +464,6 @@ const ProductDashboardWrapper: React.FC<ProductDashboardWrapperProps> = ({
                     placeholder="Tình trạng sách, số điện thoại Zalo..."
                     className="w-full px-4 py-3 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-2xl text-sm outline-none focus:border-blue-500 transition-all resize-none"
                   />
-                </div>
-                <div>
-                  <ImageUpload value={formImage} onChange={setFormImage} />
                 </div>
                 <div className="flex gap-3 pt-4">
                   <button type="submit" className="flex-1 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-2xl text-sm transition-all">
@@ -457,21 +477,31 @@ const ProductDashboardWrapper: React.FC<ProductDashboardWrapperProps> = ({
             </div>
           </div>
         </div>
-      )}
+      , document.body)}
 
-      {isEditOpen && selectedProduct && (
-        <div className="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4 py-6 bg-black/60 backdrop-blur-sm transition-all">
-          <div className="bg-white dark:bg-zinc-900 w-full max-w-lg rounded-3xl overflow-hidden shadow-2xl border border-zinc-200 dark:border-zinc-800 animate-scale-up max-h-[90vh] overflow-y-auto">
-            <div className="p-6 md:p-8">
-              <div className="flex justify-between items-center mb-6">
-                <h2 className="text-xl font-extrabold text-zinc-950 dark:text-white">Chỉnh sửa tin rao</h2>
-                <button onClick={() => setIsEditOpen(false)} className="p-1 hover:bg-zinc-100 dark:hover:bg-zinc-850 rounded-full text-zinc-500 transition-all">
-                  <X className="w-6 h-6" />
-                </button>
+      {mounted && isEditOpen && selectedProduct && createPortal(
+        <div className="fixed inset-0 z-50 overflow-y-auto flex items-start justify-center px-4 pt-20 pb-6 bg-black/60 backdrop-blur-sm transition-all">
+          <div className="relative bg-white dark:bg-zinc-900 w-full max-w-4xl rounded-3xl overflow-hidden shadow-2xl border border-zinc-200 dark:border-zinc-800 animate-scale-up max-h-[calc(100vh-5rem)] overflow-y-auto md:grid md:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)]">
+            <button
+              onClick={() => setIsEditOpen(false)}
+              className="absolute top-4 right-4 z-10 p-2 rounded-full bg-zinc-500/90 hover:bg-zinc-600 text-white transition-all"
+            >
+              <X className="w-6 h-6" />
+            </button>
+
+            <div className="border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50/90 dark:bg-zinc-950/40 p-6 md:p-8 md:border-b-0 md:border-r flex flex-col justify-center">
+              <div>
+                <ImageUpload value={formImage} onChange={setFormImage} />
+              </div>
+            </div>
+
+            <div className="min-w-0 p-6 md:p-8 flex flex-col justify-center">
+              <div className="mb-6">
+                <h2 className="text-2xl font-extrabold text-zinc-950 dark:text-white">Chỉnh sửa tin rao</h2>
               </div>
               <form onSubmit={handleEditSubmit} className="space-y-4">
                 <div>
-                  <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-2 uppercase">Tên sản phẩm *</label>
+                  <label className="block text-xs font-bold text-zinc-950 dark:text-zinc-100 mb-2 tracking-tight">Tên sản phẩm *</label>
                   <input
                     type="text"
                     required
@@ -482,7 +512,7 @@ const ProductDashboardWrapper: React.FC<ProductDashboardWrapperProps> = ({
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-2 uppercase">Giá bán (VND) *</label>
+                    <label className="block text-xs font-bold text-zinc-950 dark:text-zinc-100 mb-2 tracking-tight">Giá bán (VND) *</label>
                     <input
                       type="text"
                       required
@@ -496,7 +526,7 @@ const ProductDashboardWrapper: React.FC<ProductDashboardWrapperProps> = ({
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-2 uppercase">Danh mục *</label>
+                    <label className="block text-xs font-bold text-zinc-950 dark:text-zinc-100 mb-2 tracking-tight">Danh mục *</label>
                     <select
                       value={formCategory}
                       onChange={(e) => setFormCategory(e.target.value)}
@@ -509,16 +539,13 @@ const ProductDashboardWrapper: React.FC<ProductDashboardWrapperProps> = ({
                   </div>
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-2 uppercase">Mô tả thêm</label>
+                  <label className="block text-xs font-bold text-zinc-950 dark:text-zinc-100 mb-2 tracking-tight">Mô tả thêm</label>
                   <textarea
                     rows={3}
                     value={formDescription}
                     onChange={(e) => setFormDescription(e.target.value)}
                     className="w-full px-4 py-3 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-2xl text-sm outline-none focus:border-blue-500 transition-all resize-none"
                   />
-                </div>
-                <div>
-                  <ImageUpload value={formImage} onChange={setFormImage} />
                 </div>
                 <div className="flex gap-3 pt-4">
                   <button type="submit" className="flex-1 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-2xl text-sm transition-all">
@@ -532,7 +559,7 @@ const ProductDashboardWrapper: React.FC<ProductDashboardWrapperProps> = ({
             </div>
           </div>
         </div>
-      )}
+      , document.body)}
     </div>
   );
 };

@@ -6,6 +6,8 @@ export const APP_ROUTES = {
   HOME: '/',
   LOGIN: '/login',
   VERIFICATION: '/verification',
+  MEETING_POINTS: '/meeting-points',
+  MY_POSTS: '/my-posts',
   
   ADMIN: {
     DASHBOARD: '/admin',

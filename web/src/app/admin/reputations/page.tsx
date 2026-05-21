@@ -413,7 +413,7 @@ export default function ReputationsPage() {
           {/* Card 1: Avg score */}
           <div className="bg-white dark:bg-zinc-900 p-5 rounded-2xl border border-zinc-200/60 dark:border-zinc-800/50 flex items-center justify-between shadow-sm">
             <div className="space-y-2">
-              <span className="text-[10px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider block">Uy tín trung bình</span>
+              <span className="text-[10px] font-bold text-zinc-950 dark:text-zinc-100 tracking-tight block">Uy tín trung bình</span>
               <span className="text-2xl font-black tracking-tight">{averageReputation}</span>
             </div>
             <div className="w-12 h-12 rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center">
@@ -424,7 +424,7 @@ export default function ReputationsPage() {
           {/* Card 2: Feedback rate */}
           <div className="bg-white dark:bg-zinc-900 p-5 rounded-2xl border border-zinc-200/60 dark:border-zinc-800/50 flex items-center justify-between shadow-sm">
             <div className="space-y-2">
-              <span className="text-[10px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider block">Tỷ lệ hài lòng</span>
+              <span className="text-[10px] font-bold text-zinc-950 dark:text-zinc-100 tracking-tight block">Tỷ lệ hài lòng</span>
               <span className="text-2xl font-black tracking-tight">{positiveFeedbackRate}%</span>
             </div>
             <div className="w-12 h-12 rounded-xl bg-amber-500/10 text-amber-500 flex items-center justify-center">
@@ -435,7 +435,7 @@ export default function ReputationsPage() {
           {/* Card 3: Total reviews */}
           <div className="bg-white dark:bg-zinc-900 p-5 rounded-2xl border border-zinc-200/60 dark:border-zinc-800/50 flex items-center justify-between shadow-sm">
             <div className="space-y-2">
-              <span className="text-[10px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider block">Tổng đánh giá</span>
+              <span className="text-[10px] font-bold text-zinc-950 dark:text-zinc-100 tracking-tight block">Tổng đánh giá</span>
               <span className="text-2xl font-black tracking-tight">{feedbacks.length}</span>
             </div>
             <div className="w-12 h-12 rounded-xl bg-purple-500/10 text-purple-600 dark:text-purple-400 flex items-center justify-center">
@@ -446,7 +446,7 @@ export default function ReputationsPage() {
           {/* Card 4: Low reputation */}
           <div className="bg-white dark:bg-zinc-900 p-5 rounded-2xl border border-zinc-200/60 dark:border-zinc-800/50 flex items-center justify-between shadow-sm">
             <div className="space-y-2">
-              <span className="text-[10px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider block">Cần lưu ý</span>
+              <span className="text-[10px] font-bold text-zinc-950 dark:text-zinc-100 tracking-tight block">Cần lưu ý</span>
               <span className="text-2xl font-black tracking-tight text-rose-500">{lowReputationCount}</span>
             </div>
             <div className="w-12 h-12 rounded-xl bg-rose-500/10 text-rose-500 flex items-center justify-center">
@@ -500,7 +500,7 @@ export default function ReputationsPage() {
             <div className="p-4 md:p-5 border-b border-zinc-100 dark:border-zinc-800/40 space-y-4">
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
                 <label className="flex flex-col gap-1.5">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">Trạng thái</span>
+                  <span className="text-[10px] font-bold tracking-tight text-zinc-950 dark:text-zinc-100">Trạng thái</span>
                   <select
                     value={studentStatusFilter}
                     onChange={(e) => setStudentStatusFilter(e.target.value as StudentStatusFilter)}
@@ -513,7 +513,7 @@ export default function ReputationsPage() {
                 </label>
 
                 <label className="flex flex-col gap-1.5">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">Nhóm điểm</span>
+                  <span className="text-[10px] font-bold tracking-tight text-zinc-950 dark:text-zinc-100">Nhóm điểm</span>
                   <select
                     value={studentScoreFilter}
                     onChange={(e) => setStudentScoreFilter(e.target.value as StudentScoreFilter)}
@@ -528,7 +528,7 @@ export default function ReputationsPage() {
                 </label>
 
                 <label className="flex flex-col gap-1.5">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">Sắp xếp</span>
+                  <span className="text-[10px] font-bold tracking-tight text-zinc-950 dark:text-zinc-100">Sắp xếp</span>
                   <select
                     value={studentSort}
                     onChange={(e) => setStudentSort(e.target.value as StudentSortOption)}
@@ -566,7 +566,7 @@ export default function ReputationsPage() {
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse">
                 <thead>
-                  <tr className="bg-zinc-50 dark:bg-zinc-800/40 text-[10px] text-zinc-400 font-bold uppercase tracking-wider border-b border-zinc-100 dark:border-zinc-800/50">
+                  <tr className="bg-zinc-50 dark:bg-zinc-800/40 text-[10px] text-zinc-950 dark:text-zinc-100 font-bold tracking-tight border-b border-zinc-100 dark:border-zinc-800/50">
                     <th className="p-4 pl-6">Sinh viên</th>
                     <th className="p-4">Mã số SV</th>
                     <th className="p-4">Trạng thái xác thực</th>
@@ -690,7 +690,7 @@ export default function ReputationsPage() {
             <div className="p-4 md:p-5 border-b border-zinc-100 dark:border-zinc-800/40 space-y-4">
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
                 <label className="flex flex-col gap-1.5">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">Mức đánh giá</span>
+                  <span className="text-[10px] font-bold tracking-tight text-zinc-950 dark:text-zinc-100">Mức đánh giá</span>
                   <select
                     value={feedbackRatingFilter}
                     onChange={(e) => setFeedbackRatingFilter(e.target.value as FeedbackRatingFilter)}
@@ -705,7 +705,7 @@ export default function ReputationsPage() {
                 </label>
 
                 <label className="flex flex-col gap-1.5">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">Sắp xếp</span>
+                  <span className="text-[10px] font-bold tracking-tight text-zinc-950 dark:text-zinc-100">Sắp xếp</span>
                   <select
                     value={feedbackSort}
                     onChange={(e) => setFeedbackSort(e.target.value as FeedbackSortOption)}
@@ -847,7 +847,7 @@ export default function ReputationsPage() {
             <div className="p-4 md:p-5 border-b border-zinc-100 dark:border-zinc-800/40 space-y-4">
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
                 <label className="flex flex-col gap-1.5">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">Loại biến động</span>
+                  <span className="text-[10px] font-bold tracking-tight text-zinc-950 dark:text-zinc-100">Loại biến động</span>
                   <select
                     value={activityTypeFilter}
                     onChange={(e) => setActivityTypeFilter(e.target.value as ActivityTypeFilter)}
@@ -860,7 +860,7 @@ export default function ReputationsPage() {
                 </label>
 
                 <label className="flex flex-col gap-1.5">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">Sắp xếp</span>
+                  <span className="text-[10px] font-bold tracking-tight text-zinc-950 dark:text-zinc-100">Sắp xếp</span>
                   <select
                     value={activitySort}
                     onChange={(e) => setActivitySort(e.target.value as ActivitySortOption)}
@@ -1011,14 +1011,14 @@ export default function ReputationsPage() {
                   <span className="text-[10px] text-zinc-400 font-mono block mt-0.5">{selectedStudent.studentCode}</span>
                 </div>
                 <div className="text-right">
-                  <span className="text-[9px] text-zinc-400 block uppercase">Hiện tại</span>
+                  <span className="text-[9px] text-zinc-950 dark:text-zinc-100 block tracking-tight">Hiện tại</span>
                   <span className="text-xs font-black text-blue-600 bg-blue-50 dark:bg-blue-500/10 dark:text-blue-400 px-2 py-0.5 rounded-lg">{selectedStudent.reputationScore}đ</span>
                 </div>
               </div>
 
               {/* Increase / Decrease Toggle */}
               <div className="space-y-1.5">
-                <span className="text-[10px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider block">Loại điều chỉnh</span>
+                <span className="text-[10px] font-bold text-zinc-950 dark:text-zinc-100 tracking-tight block">Loại điều chỉnh</span>
                 <div className="grid grid-cols-2 gap-3">
                   <button
                     type="button"
@@ -1053,7 +1053,7 @@ export default function ReputationsPage() {
 
               {/* Delta Value */}
               <div className="space-y-1.5">
-                <span className="text-[10px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider block">Số điểm thay đổi</span>
+                <span className="text-[10px] font-bold text-zinc-950 dark:text-zinc-100 tracking-tight block">Số điểm thay đổi</span>
                 <input
                   type="number"
                   min="1"
@@ -1069,7 +1069,7 @@ export default function ReputationsPage() {
 
               {/* Note / Justification */}
               <div className="space-y-1.5">
-                <span className="text-[10px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider block">Lý do điều chỉnh</span>
+                <span className="text-[10px] font-bold text-zinc-950 dark:text-zinc-100 tracking-tight block">Lý do điều chỉnh</span>
                 <textarea
                   required
                   rows={3}

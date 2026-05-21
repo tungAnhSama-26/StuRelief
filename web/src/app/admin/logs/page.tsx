@@ -116,7 +116,7 @@ export default function SecurityLogsPage() {
                 <div className="flex-1 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   <div className="flex flex-col space-y-1">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span className="text-xs font-semibold uppercase tracking-wider">{log.action}</span>
+                      <span className="text-xs font-semibold text-zinc-950 dark:text-zinc-100 tracking-tight">{log.action}</span>
                       <span className="text-[10px] text-zinc-400 font-medium">{log.userEmail}</span>
                     </div>
                     <p className="text-xs font-medium text-zinc-600 dark:text-zinc-400 leading-relaxed">{log.details}</p>

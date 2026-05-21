@@ -5,6 +5,8 @@ import { env } from '@/infrastructure/config/env';
 import prisma from '@/lib/prisma';
 import { PrismaItemRepository } from '@/infrastructure/persistence/PrismaItemRepository';
 import { GetItemsUseCase } from '@/use-cases/items/GetItemsUseCase';
+import { recordAdminActivity } from '@/lib/adminActivityLog';
+import { createUserNotification } from '@/lib/notifications';
 
 const itemRepository = new PrismaItemRepository();
 
@@ -60,10 +62,46 @@ export async function PUT(request: Request) {
       return NextResponse.json({ error: 'Invalid status transition' }, { status: 400 });
     }
 
+    const product = await prisma.product.findUnique({ where: { id } });
     await prisma.product.update({
       where: { id },
       data: { status },
     });
+
+    const updatedProduct = await prisma.product.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        name: true,
+        sellerId: true,
+      },
+    });
+
+    await recordAdminActivity({
+      userId: payload.id,
+      action: status === 'AVAILABLE' ? 'APPROVE_POST' : 'HIDE_POST',
+      targetType: 'PRODUCT',
+      targetId: id,
+      metadata: {
+        actionLabel: status === 'AVAILABLE' ? 'DUYỆT BÀI VIẾT' : 'ẨN BÀI VIẾT',
+        details: `${status === 'AVAILABLE' ? 'Đã duyệt' : 'Đã ẩn'} bài đăng "${updatedProduct?.name || id}".`,
+        severity: status === 'AVAILABLE' ? 'INFO' : 'WARNING',
+        productName: updatedProduct?.name || null,
+        status,
+      },
+    });
+
+    if (updatedProduct?.sellerId) {
+      await createUserNotification({
+        userId: updatedProduct.sellerId,
+        title: status === 'AVAILABLE' ? 'Bài đăng của bạn đã được duyệt' : 'Bài đăng của bạn chưa được duyệt',
+        content: status === 'AVAILABLE'
+          ? `Bài đăng "${updatedProduct.name}" của bạn đã được duyệt và sẽ hiển thị trên hệ thống.`
+          : `Bài đăng "${updatedProduct.name}" của bạn chưa được duyệt hoặc đã bị ẩn. Vui lòng kiểm tra lại nội dung.`,
+        type: status === 'AVAILABLE' ? 'SYSTEM' : 'ALARM',
+        link: `/products/${updatedProduct.id}`,
+      });
+    }
 
     const updated = await itemRepository.findById(id);
     return NextResponse.json(updated);

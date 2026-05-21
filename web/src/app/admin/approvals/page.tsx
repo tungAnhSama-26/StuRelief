@@ -155,7 +155,7 @@ export default function ApprovalsPage() {
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
-                <tr className="border-b border-zinc-200 dark:border-zinc-800 text-[11px] font-semibold text-zinc-400 uppercase tracking-widest">
+                <tr className="border-b border-zinc-200 dark:border-zinc-800 text-[11px] font-semibold text-zinc-950 dark:text-zinc-100 tracking-tight">
                   <th className="py-3 px-4">Sinh viên</th>
                   <th className="py-3 px-4">Mã số sinh viên (MSSV)</th>
                   <th className="py-3 px-4">Cơ sở trường</th>
@@ -233,19 +233,19 @@ export default function ApprovalsPage() {
               {/* Data fields */}
               <div className="grid grid-cols-2 gap-4 text-xs">
                 <div className="bg-zinc-50 dark:bg-zinc-800/40 p-3.5 rounded-xl">
-                  <span className="text-[10px] text-zinc-400 uppercase font-medium tracking-wider">Họ và tên</span>
+                  <span className="text-[10px] text-zinc-950 dark:text-zinc-100 font-medium tracking-tight">Họ và tên</span>
                   <p className="font-medium text-zinc-950 dark:text-white mt-0.5">{selectedVerification.fullName}</p>
                 </div>
                 <div className="bg-zinc-50 dark:bg-zinc-800/40 p-3.5 rounded-xl">
-                  <span className="text-[10px] text-zinc-400 uppercase font-medium tracking-wider">Mã số sinh viên (MSSV)</span>
+                  <span className="text-[10px] text-zinc-950 dark:text-zinc-100 font-medium tracking-tight">Mã số sinh viên (MSSV)</span>
                   <p className="font-medium text-zinc-950 dark:text-white mt-0.5">{selectedVerification.mssv}</p>
                 </div>
                 <div className="bg-zinc-50 dark:bg-zinc-800/40 p-3.5 rounded-xl">
-                  <span className="text-[10px] text-zinc-400 uppercase font-medium tracking-wider">Email trường cấp</span>
+                  <span className="text-[10px] text-zinc-950 dark:text-zinc-100 font-medium tracking-tight">Email trường cấp</span>
                   <p className="font-medium text-zinc-950 dark:text-white mt-0.5 truncate">{selectedVerification.email}</p>
                 </div>
                 <div className="bg-zinc-50 dark:bg-zinc-800/40 p-3.5 rounded-xl">
-                  <span className="text-[10px] text-zinc-400 uppercase font-medium tracking-wider">Cơ sở (Campus)</span>
+                  <span className="text-[10px] text-zinc-950 dark:text-zinc-100 font-medium tracking-tight">Cơ sở (Campus)</span>
                   <p className="font-medium text-zinc-950 dark:text-white mt-0.5">{selectedVerification.campus}</p>
                 </div>
               </div>

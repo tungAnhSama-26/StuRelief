@@ -158,7 +158,7 @@ export default function AdminDashboardOverview() {
             { title: 'Sinh viên đã xác minh', value: stats.verifiedStudents.toLocaleString(), color: 'blue', icon: UserCheck },
             { title: 'Tổng tin đăng hiện tại', value: stats.totalProducts.toLocaleString(), color: 'indigo', icon: Package },
             { title: 'Tranh chấp cần xử lý', value: stats.pendingDisputes.toLocaleString(), color: 'rose', icon: ShieldAlert },
-            { title: 'Điểm hẹn Safe Hub', value: `${stats.safeHubs} địa điểm`, color: 'emerald', icon: MapPin },
+            { title: 'Điểm hẹn Safe Hub', value: String(stats.safeHubs), color: 'emerald', icon: MapPin },
           ].map((stat, index) => {
             const Icon = stat.icon;
             return (
@@ -167,7 +167,7 @@ export default function AdminDashboardOverview() {
                 className="bg-white dark:bg-zinc-900 p-6 rounded-3xl border border-zinc-200/80 dark:border-zinc-800/60 shadow-sm flex items-center justify-between group hover:border-blue-500/30 transition-all duration-300"
               >
                 <div className="space-y-2">
-                  <span className="text-xs font-semibold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider">{stat.title}</span>
+                  <span className="text-xs font-medium text-zinc-400 dark:text-zinc-500 tracking-tight">{stat.title}</span>
                   <h3 className="text-3xl font-bold tracking-tight text-zinc-900 dark:text-white">{stat.value}</h3>
                 </div>
                 <div
@@ -193,7 +193,7 @@ export default function AdminDashboardOverview() {
             <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
               <div>
                 <h3 className="text-lg font-semibold leading-none">Hoạt Động Trao Đổi Hệ Thống</h3>
-                <p className="text-xs text-zinc-400 font-medium mt-2">Dữ liệu thật theo tháng từ giao dịch thành công và tin đăng được duyệt.</p>
+                <div className="text-xs text-zinc-400 font-medium mt-2">Dữ liệu thật theo tháng từ giao dịch thành công và tin đăng được duyệt.</div>
               </div>
 
               <div className="flex flex-wrap items-center gap-2">
@@ -303,13 +303,10 @@ export default function AdminDashboardOverview() {
             </svg>
           </div>
 
-          <div className="grid grid-cols-4 gap-3 px-4 sm:px-12 text-[10px] font-semibold text-zinc-400 uppercase tracking-widest mt-4">
+          <div className="grid grid-cols-4 gap-3 px-4 sm:px-12 text-[10px] font-semibold text-zinc-400 tracking-tight mt-4">
             {weeks.map((week) => (
               <div key={week.week} className="flex flex-col items-center gap-1">
                 <span>{week.label}</span>
-                <span className="text-[9px] normal-case tracking-normal text-zinc-300 dark:text-zinc-500">
-                  {week.successfulTransactions + week.approvedPosts}
-                </span>
               </div>
             ))}
           </div>

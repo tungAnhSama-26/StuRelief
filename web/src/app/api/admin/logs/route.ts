@@ -21,9 +21,14 @@ function toActionLabel(action: string, metadata: Record<string, unknown>) {
     DELETE_PRODUCT: 'XÓA TIN',
     CHANGE_PRICE: 'THAY ĐỔI GIÁ ĐỘT NGỘT',
     EDIT_LISTING: 'SỬA TIN MÔ TẢ ĐANG GIAO DỊCH',
+    APPROVE_POST: 'DUYỆT BÀI VIẾT',
+    HIDE_POST: 'ẨN BÀI VIẾT',
     VERIFICATION_REQUEST: 'XÁC THỰC THÀNH VIÊN',
     DISPUTE_REVIEW: 'ĐỐI SOÁT TRANH CHẤP',
     SUSPICIOUS_EDIT: 'SỬA TIN MÔ TẢ ĐANG GIAO DỊCH',
+    ADJUST_REPUTATION: 'ĐIỀU CHỈNH ĐIỂM UY TÍN',
+    SYSTEM_PENALTY: 'TRỪ ĐIỂM UY TÍN',
+    ORDER_STATUS_UPDATE: 'CẬP NHẬT TRẠNG THÁI ĐƠN',
   };
 
   return map[action] ?? action.replace(/_/g, ' ');
@@ -45,6 +50,15 @@ function toDetails(action: string, metadata: Record<string, unknown>) {
     case 'EDIT_LISTING':
     case 'SUSPICIOUS_EDIT':
       return 'Chỉnh sửa mô tả hoặc thông tin khi giao dịch đang diễn ra.';
+    case 'APPROVE_POST':
+      return 'Bài đăng mới đã được duyệt hiển thị trên hệ thống.';
+    case 'HIDE_POST':
+      return 'Bài đăng bị ẩn khỏi danh sách hiển thị.';
+    case 'ADJUST_REPUTATION':
+    case 'SYSTEM_PENALTY':
+      return 'Điểm uy tín của sinh viên đã được điều chỉnh.';
+    case 'ORDER_STATUS_UPDATE':
+      return 'Trạng thái đơn hàng đã được cập nhật.';
     default:
       return 'Có thay đổi quan trọng trong hệ thống cần theo dõi.';
   }
@@ -62,7 +76,7 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const limit = Math.min(Math.max(Number(searchParams.get('limit') ?? 20), 1), 50);
 
-    const [activityRows, verificationRows, disputeRows] = await Promise.all([
+    const [activityRows, verificationRows, disputeRows, reputationRows, orderStatusRows] = await Promise.all([
       prisma.activityLog.findMany({
         orderBy: { createdAt: 'desc' },
         take: limit,
@@ -88,6 +102,28 @@ export async function GET(request: Request) {
                   snapshots: true,
                 },
               },
+            },
+          },
+        },
+        orderBy: { createdAt: 'desc' },
+        take: Math.ceil(limit / 2),
+      }),
+      prisma.reputationRecord.findMany({
+        include: {
+          user: {
+            include: {
+              profile: true,
+            },
+          },
+        },
+        orderBy: { createdAt: 'desc' },
+        take: limit,
+      }),
+      prisma.orderStatusLog.findMany({
+        include: {
+          order: {
+            include: {
+              product: true,
             },
           },
         },
@@ -174,7 +210,41 @@ export async function GET(request: Request) {
       };
     });
 
-    const logs = [...activityLogs, ...verificationLogs, ...disputeLogs]
+    const reputationLogs: SecurityLogItem[] = reputationRows.map((record) => {
+      const delta = Number(record.delta);
+      const isNegative = delta < 0;
+      const isCriticalPenalty = isNegative && Math.abs(delta) >= 20;
+
+      return {
+        id: `reputation-${record.id}`,
+        userEmail: record.user.email,
+        action: isNegative ? 'TRỪ ĐIỂM UY TÍN' : 'CỘNG ĐIỂM UY TÍN',
+        details:
+          record.note ||
+          `${isNegative ? 'Trừ' : 'Cộng'} ${Math.abs(delta).toLocaleString('vi-VN')} điểm uy tín cho sinh viên.`,
+        type: isNegative ? (isCriticalPenalty ? 'CRITICAL' : 'WARNING') : 'INFO',
+        timestamp: formatRelativeTime(record.createdAt),
+        createdAt: record.createdAt.toISOString(),
+      };
+    });
+
+    const orderStatusLogs: SecurityLogItem[] = orderStatusRows.map((row) => {
+      const status = row.status;
+      const productName = row.order.product?.name || 'Đơn hàng';
+      const isImportant = status === 'CANCELLED' || status === 'DISPUTED';
+
+      return {
+        id: `order-status-${row.id}`,
+        userEmail: 'system@stu-relief.local',
+        action: 'CẬP NHẬT TRẠNG THÁI ĐƠN',
+        details: `${productName} đã chuyển sang trạng thái ${status}${row.note ? `. ${row.note}` : '.'}`,
+        type: isImportant ? 'WARNING' : 'INFO',
+        timestamp: formatRelativeTime(row.createdAt),
+        createdAt: row.createdAt.toISOString(),
+      };
+    });
+
+    const logs = [...activityLogs, ...verificationLogs, ...disputeLogs, ...reputationLogs, ...orderStatusLogs]
       .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
       .slice(0, limit);
 

@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Check, ChevronLeft, ChevronRight, Eye, PackageCheck, Search, X } from 'lucide-react';
+import { ArrowLeft, Check, ChevronLeft, ChevronRight, PackageCheck, Search, X } from 'lucide-react';
 import DashboardLayout from '@/layouts/dashboard/DashboardLayout';
 import { useAuthGuard } from '@/lib/hooks/useAuthGuard';
 import { APP_ROUTES, PRODUCT_STATUS_CLASSES, PRODUCT_STATUS_LABELS, UserRole } from '@shared';
@@ -168,7 +168,7 @@ export default function AdminPostsPage() {
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
-                <tr className="border-b border-zinc-200 dark:border-zinc-800 text-[11px] font-semibold text-zinc-400 uppercase tracking-widest">
+                <tr className="border-b border-zinc-200 dark:border-zinc-800 text-[11px] font-semibold text-zinc-950 dark:text-zinc-100 tracking-tight">
                   <th className="py-3 px-4">Bài đăng</th>
                   <th className="py-3 px-4">Danh mục</th>
                   <th className="py-3 px-4">Người đăng</th>
@@ -178,7 +178,7 @@ export default function AdminPostsPage() {
               </thead>
               <tbody>
                 {posts.map((post) => (
-                  <tr key={post.id} className="border-b border-zinc-100 dark:border-zinc-800/40 text-xs hover:bg-zinc-50 dark:hover:bg-zinc-800/25 transition-colors">
+                  <tr key={post.id} className="border-b border-zinc-100 dark:border-zinc-800/40 text-xs hover:bg-zinc-50 dark:hover:bg-zinc-800/25 transition-colors cursor-pointer" onClick={() => setSelectedPost(post)}>
                     <td className="py-4 px-4">
                       <div className="flex items-center gap-3">
                         <div className="w-12 h-12 rounded-xl overflow-hidden bg-zinc-100 dark:bg-zinc-800 shrink-0">
@@ -206,15 +206,10 @@ export default function AdminPostsPage() {
                     <td className="py-4 px-4 text-right">
                       <div className="inline-flex items-center gap-2">
                         <button
-                          onClick={() => setSelectedPost(post)}
-                          className="h-9 w-9 rounded-xl bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-200 flex items-center justify-center transition-colors"
-                          aria-label="Xem chi tiết"
-                          title="Xem chi tiết"
-                        >
-                          <Eye className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => handleReview(post.id, 'AVAILABLE')}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleReview(post.id, 'AVAILABLE');
+                          }}
                           className="h-9 w-9 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-600 dark:bg-emerald-500/10 dark:hover:bg-emerald-500/20 dark:text-emerald-400 flex items-center justify-center transition-colors"
                           aria-label="Duyệt"
                           title="Duyệt"
@@ -222,7 +217,10 @@ export default function AdminPostsPage() {
                           <Check className="w-4 h-4" />
                         </button>
                         <button
-                          onClick={() => handleReview(post.id, 'HIDDEN')}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleReview(post.id, 'HIDDEN');
+                          }}
                           className="h-9 w-9 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-600 dark:bg-rose-500/10 dark:hover:bg-rose-500/20 dark:text-rose-400 flex items-center justify-center transition-colors"
                           aria-label="Từ chối"
                           title="Từ chối"
@@ -325,7 +323,7 @@ export default function AdminPostsPage() {
               <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-4">Người đăng: {selectedPost.studentId}</p>
               <hr className="border-zinc-200 dark:border-zinc-800 my-4" />
               <div className="mb-6">
-                <h4 className="text-sm font-bold text-zinc-900 dark:text-zinc-100 mb-2 uppercase tracking-wide">Mô tả chi tiết</h4>
+                <h4 className="text-sm font-bold text-zinc-900 dark:text-zinc-100 mb-2 tracking-tight">Mô tả chi tiết</h4>
                 <p className="text-zinc-600 dark:text-zinc-300 text-sm whitespace-pre-line leading-relaxed">
                   {selectedPost.description || 'Bài đăng này chưa có mô tả chi tiết.'}
                 </p>

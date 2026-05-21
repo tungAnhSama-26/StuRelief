@@ -1,8 +1,8 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
-import { Search, Plus } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { Plus, Search } from 'lucide-react';
 
 interface SearchAndFilterProps {
   initialSearch?: string;
@@ -10,6 +10,7 @@ interface SearchAndFilterProps {
   initialLimit?: number;
   onOpenCreateModal: () => void;
   categories: string[];
+  basePath?: string;
 }
 
 const SearchAndFilter: React.FC<SearchAndFilterProps> = ({
@@ -18,8 +19,10 @@ const SearchAndFilter: React.FC<SearchAndFilterProps> = ({
   initialLimit = 8,
   onOpenCreateModal,
   categories,
+  basePath = '/',
 }) => {
   const router = useRouter();
+  const pathname = usePathname();
   const searchParams = useSearchParams();
   const [search, setSearch] = useState(initialSearch);
   const [category, setCategory] = useState(initialCategory);
@@ -37,7 +40,8 @@ const SearchAndFilter: React.FC<SearchAndFilterProps> = ({
     if (limitVal !== 8) params.set('limit', String(limitVal));
     if (searchVal.trim()) params.set('search', searchVal.trim());
     if (catVal && catVal !== 'Tất cả danh mục') params.set('category', catVal);
-    router.push(`/?${params.toString()}`);
+    const targetBasePath = basePath || pathname || '/';
+    router.push(params.toString() ? `${targetBasePath}?${params.toString()}` : targetBasePath);
   };
 
   const handleSearchSubmit = (e: React.FormEvent) => {
@@ -61,7 +65,8 @@ const SearchAndFilter: React.FC<SearchAndFilterProps> = ({
     setSearch('');
     setCategory('Tất cả danh mục');
     setLimit(8);
-    router.push('/');
+    const targetBasePath = basePath || pathname || '/';
+    router.push(targetBasePath);
   };
 
   const allCategoriesOptions = ['Tất cả danh mục', ...categories];
