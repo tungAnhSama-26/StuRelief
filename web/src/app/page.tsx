@@ -13,7 +13,7 @@ import {
 } from 'lucide-react';
 import ProductDashboardWrapper from '@/components/products/ProductDashboardWrapper';
 import DashboardLayout from '@/layouts/dashboard/DashboardLayout';
-import prisma from '@/lib/prisma';
+import prisma, { runWithDatabase } from '@/lib/prisma';
 import { verifyToken } from '@/lib/jwt';
 import { env } from '@/infrastructure/config/env';
 import { PrismaItemRepository } from '@/infrastructure/persistence/PrismaItemRepository';
@@ -53,18 +53,31 @@ export default async function Home({
   let myProductsCount = 0;
 
   try {
-    const [catalogData, dbCategories, activePostsCount, sellerPostsCount] = await Promise.all([
-      getItemsUseCase.execute(page, limit, { search, category, status: 'AVAILABLE' }),
-      prisma.category.findMany({ orderBy: { name: 'asc' } }),
-      prisma.product.count({ where: { status: 'AVAILABLE' } }),
-      currentUser
-        ? prisma.product.count({
-            where: {
-              sellerId: currentUserId,
-            },
-          })
-        : Promise.resolve(0),
-    ]);
+    const { catalogData, dbCategories, activePostsCount, sellerPostsCount } = await runWithDatabase(
+      async () => {
+        const [catalogData, dbCategories, activePostsCount, sellerPostsCount] = await Promise.all([
+          getItemsUseCase.execute(page, limit, { search, category, status: 'AVAILABLE' }),
+          prisma.category.findMany({ orderBy: { name: 'asc' } }),
+          prisma.product.count({ where: { status: 'AVAILABLE' } }),
+          currentUser
+            ? prisma.product.count({
+                where: {
+                  sellerId: currentUserId,
+                },
+              })
+            : Promise.resolve(0),
+        ]);
+
+        return { catalogData, dbCategories, activePostsCount, sellerPostsCount };
+      },
+      () => ({
+        catalogData: { items: [], total: 0 },
+        dbCategories: [],
+        activePostsCount: 0,
+        sellerPostsCount: 0,
+      }),
+      'Home page data load'
+    );
 
     items = catalogData.items;
     total = catalogData.total;

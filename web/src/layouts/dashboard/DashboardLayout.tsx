@@ -350,6 +350,7 @@ export default function DashboardLayout({
   const handleToggleCollapse = () => setIsCollapsed((prev) => !prev);
   const showSidebar = authLoaded && Boolean(currentUser);
   const shouldShowFooter = pathname === APP_ROUTES.HOME;
+  const loginHref = pathname.startsWith('/admin') ? APP_ROUTES.ADMIN.LOGIN : APP_ROUTES.LOGIN;
   const notificationLabel = useMemo(() => {
     if (!notificationBadge) return 'Thông báo';
     return notificationBadge > 99 ? '99+' : String(notificationBadge);
@@ -525,7 +526,7 @@ export default function DashboardLayout({
               </>
             ) : (
               <Link
-                href="/login"
+                href={loginHref}
                 className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-600 text-white text-sm font-medium hover:bg-blue-500 transition-all duration-200 active:scale-95 transform-gpu shadow-md shadow-blue-500/20"
               >
                 <LogIn className="w-4 h-4" />

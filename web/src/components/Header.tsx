@@ -26,10 +26,10 @@ export default function Header() {
           const data = await res.json();
           if (data.user) {
             setCurrentUser(data.user);
-            localStorage.setItem('sturelief_user', JSON.stringify(data.user));
+            sessionStorage.setItem('sturelief_user', JSON.stringify(data.user));
           } else {
             setCurrentUser(null);
-            localStorage.removeItem('sturelief_user');
+            sessionStorage.removeItem('sturelief_user');
           }
         }
       } catch (err) {
@@ -46,7 +46,7 @@ export default function Header() {
       const res = await fetch('/api/auth/logout', { method: 'POST' });
       if (res.ok) {
         setCurrentUser(null);
-        localStorage.removeItem('sturelief_user');
+        sessionStorage.removeItem('sturelief_user');
         router.refresh();
         window.location.reload(); // Reload to refresh all server-side counts
       }

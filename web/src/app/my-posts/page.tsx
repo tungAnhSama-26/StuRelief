@@ -3,18 +3,13 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import {
   ArrowLeft,
-  CheckCircle2,
   ChevronLeft,
   ChevronRight,
-  Package2,
-  PencilLine,
-  ShieldCheck,
   Sparkles,
-  XCircle,
 } from 'lucide-react';
 import DashboardLayout from '@/layouts/dashboard/DashboardLayout';
 import ProductDashboardWrapper from '@/components/products/ProductDashboardWrapper';
-import prisma from '@/lib/prisma';
+import prisma, { runWithDatabase } from '@/lib/prisma';
 import { verifyToken } from '@/lib/jwt';
 import { env } from '@/infrastructure/config/env';
 import { PrismaItemRepository } from '@/infrastructure/persistence/PrismaItemRepository';
@@ -62,14 +57,31 @@ export default async function MyPostsPage({
   let hiddenCount = 0;
 
   try {
-    const [catalogData, dbCategories, sellerPostsCount, draftPosts, availablePosts, hiddenPosts] = await Promise.all([
-      getItemsUseCase.execute(page, limit, { search, category, studentId: currentUserId, status: 'ALL' }),
-      prisma.category.findMany({ orderBy: { name: 'asc' } }),
-      prisma.product.count({ where: { sellerId: currentUserId } }),
-      prisma.product.count({ where: { sellerId: currentUserId, status: 'DRAFT' } }),
-      prisma.product.count({ where: { sellerId: currentUserId, status: 'AVAILABLE' } }),
-      prisma.product.count({ where: { sellerId: currentUserId, status: 'HIDDEN' } }),
-    ]);
+    const { catalogData, dbCategories, sellerPostsCount, draftPosts, availablePosts, hiddenPosts } =
+      await runWithDatabase(
+        async () => {
+          const [catalogData, dbCategories, sellerPostsCount, draftPosts, availablePosts, hiddenPosts] =
+            await Promise.all([
+              getItemsUseCase.execute(page, limit, { search, category, studentId: currentUserId, status: 'ALL' }),
+              prisma.category.findMany({ orderBy: { name: 'asc' } }),
+              prisma.product.count({ where: { sellerId: currentUserId } }),
+              prisma.product.count({ where: { sellerId: currentUserId, status: 'DRAFT' } }),
+              prisma.product.count({ where: { sellerId: currentUserId, status: 'AVAILABLE' } }),
+              prisma.product.count({ where: { sellerId: currentUserId, status: 'HIDDEN' } }),
+            ]);
+
+          return { catalogData, dbCategories, sellerPostsCount, draftPosts, availablePosts, hiddenPosts };
+        },
+        () => ({
+          catalogData: { items: [], total: 0 },
+          dbCategories: [],
+          sellerPostsCount: 0,
+          draftPosts: 0,
+          availablePosts: 0,
+          hiddenPosts: 0,
+        }),
+        'My posts page data load'
+      );
 
     items = catalogData.items;
     total = catalogData.total;

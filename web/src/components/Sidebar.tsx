@@ -52,7 +52,7 @@ export default function Sidebar({
     try {
       const res = await fetch('/api/auth/logout', { method: 'POST' });
       if (res.ok) {
-        localStorage.removeItem('sturelief_user');
+        sessionStorage.removeItem('sturelief_user');
         router.push('/');
         window.location.reload();
       }

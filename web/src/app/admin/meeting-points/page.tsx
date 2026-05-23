@@ -158,7 +158,7 @@ export default function AdminMeetingPointsPage() {
       <div className="space-y-6">
         {feedback && (
           <div
-            className={`fixed right-5 top-5 z-50 flex items-center gap-2 rounded-2xl border px-5 py-3 shadow-xl ${
+            className={`fixed right-5 top-20 z-50 flex items-center gap-2 rounded-2xl border px-5 py-3 shadow-xl md:top-24 ${
               feedback.type === 'success'
                 ? 'border-emerald-400 bg-emerald-500 text-white'
                 : 'border-rose-400 bg-rose-500 text-white'

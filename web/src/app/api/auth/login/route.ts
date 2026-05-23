@@ -58,13 +58,12 @@ export async function POST(request: Request) {
 
     const token = signToken(userData, env.JWT_SECRET, 86400);
 
-    // 4. Thiết lập HTTP-only cookie bảo mật cao
+    // 4. Thiết lập HTTP-only cookie theo phiên trình duyệt
     const cookieStore = await cookies();
     cookieStore.set('token', token, {
       httpOnly: true,
       secure: env.NODE_ENV === 'production',
       sameSite: 'strict',
-      maxAge: 86400, // 24 giờ
       path: '/',
     });
 
