@@ -23,14 +23,9 @@ export default function RootLayout({
         } as CSSProperties
       }
     >
-      <head>
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `(function(){try{var k='sturelief.dashboard.theme';var t=localStorage.getItem(k);t=t==='light'||t==='dark'?t:(window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');document.documentElement.classList.toggle('dark',t==='dark');document.documentElement.style.colorScheme=t;}catch(e){}})();`,
-          }}
-        />
-      </head>
-      <body className="min-h-full flex flex-col font-sans">{children}</body>
+      <body className="min-h-full flex flex-col font-sans" suppressHydrationWarning>
+        {children}
+      </body>
     </html>
   );
 }

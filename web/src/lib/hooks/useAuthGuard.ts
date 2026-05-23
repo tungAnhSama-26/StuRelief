@@ -11,6 +11,9 @@ export function useAuthGuard(requiredRole?: UserRole) {
   useEffect(() => {
     let active = true;
 
+    const getLoginRoute = () =>
+      requiredRole === UserRole.ADMIN ? APP_ROUTES.ADMIN.LOGIN : APP_ROUTES.LOGIN;
+
     const checkAuth = async () => {
       try {
         const res = await fetch(API_ROUTES.AUTH.ME);
@@ -19,23 +22,21 @@ export function useAuthGuard(requiredRole?: UserRole) {
           if (active) {
             if (data.user) {
               if (requiredRole && data.user.role !== requiredRole) {
-                router.push(APP_ROUTES.LOGIN);
+                router.replace(getLoginRoute());
               } else {
                 setCurrentUser(data.user);
               }
             } else {
-              router.push(APP_ROUTES.LOGIN);
+              router.replace(getLoginRoute());
             }
           }
-        } else {
-          if (active) {
-            router.push(APP_ROUTES.LOGIN);
-          }
+        } else if (active) {
+          router.replace(getLoginRoute());
         }
       } catch (err) {
         console.error('Lỗi kiểm tra quyền truy cập:', err);
         if (active) {
-          router.push(APP_ROUTES.LOGIN);
+          router.replace(getLoginRoute());
         }
       } finally {
         if (active) {

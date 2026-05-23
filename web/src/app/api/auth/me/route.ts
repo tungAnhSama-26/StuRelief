@@ -26,7 +26,7 @@ export async function GET() {
         avatarUrl: payload.avatarUrl || null,
       },
     }, { status: 200 });
-  } catch (error) {
+  } catch {
     return NextResponse.json({ user: null }, { status: 500 });
   }
 }

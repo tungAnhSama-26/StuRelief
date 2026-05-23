@@ -138,7 +138,7 @@ export default function DisputesPage() {
     <DashboardLayout activeItemId="disputes" pageTitle="Xử Lý Tranh Chấp & Đối Soát">
       <div className="space-y-6">
         {feedback && (
-          <div className={`fixed top-5 right-5 z-50 px-5 py-3 rounded-2xl shadow-xl border flex items-center gap-2 ${
+          <div className={`fixed right-5 top-20 z-50 flex items-center gap-2 rounded-2xl border px-5 py-3 shadow-xl md:top-24 ${
             feedback.type === 'success'
               ? 'bg-emerald-500 text-white border-emerald-400'
               : 'bg-rose-500 text-white border-rose-400'

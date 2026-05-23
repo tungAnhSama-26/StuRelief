@@ -1,12 +1,15 @@
 'use client';
 
 import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { Loader2, HeartHandshake, ArrowRight } from 'lucide-react';
 
 export default function GoogleLoginRedirectPage() {
+  const router = useRouter();
+
   useEffect(() => {
-    window.location.href = '/api/auth/google';
-  }, []);
+    window.location.href = '/api/auth/google?returnTo=/';
+  }, [router]);
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-slate-50 px-4 dark:bg-slate-950">
@@ -29,7 +32,7 @@ export default function GoogleLoginRedirectPage() {
         <button
           type="button"
           onClick={() => {
-            window.location.href = '/api/auth/google';
+            window.location.href = '/api/auth/google?returnTo=/';
           }}
           className="mt-6 inline-flex items-center gap-2 rounded-2xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-blue-700"
         >

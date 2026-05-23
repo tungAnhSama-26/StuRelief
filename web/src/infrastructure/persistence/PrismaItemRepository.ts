@@ -1,7 +1,8 @@
 import { Item, CreateItemDTO as PostItemDTO, UpdateItemDTO } from '@shared/domain/Item';
 import { IItemRepository } from '@shared/domain/IItemRepository';
 import { FilterItemSpecification, ItemSpecification } from '@/domain/repositories/ItemSpecification';
-import prisma from '@/lib/prisma';
+import prisma, { runWithDatabase } from '@/lib/prisma';
+import { Prisma } from '@prisma/client';
 import { ProductStatus } from '@shared';
 
 type ItemFilters = {
@@ -11,14 +12,21 @@ type ItemFilters = {
   status?: string;
 };
 
+type ProductWithRelations = Prisma.ProductGetPayload<{
+  include: {
+    media: true;
+    category: true;
+  };
+}>;
+
 export class PrismaItemRepository implements IItemRepository {
-  private mapProduct(product: any): Item {
+  private mapProduct(product: ProductWithRelations): Item {
     return {
       id: product.id,
       name: product.name,
       price: product.currentPrice,
       category: product.category ? product.category.name : 'Chưa phân loại',
-      images: product.media.filter((m: any) => m.type === 'IMAGE').map((m: any) => m.url),
+      images: product.media.filter((media) => media.type === 'IMAGE').map((media) => media.url),
       studentId: product.sellerId,
       isQuickSell: false,
       status: product.status as ProductStatus,
@@ -42,19 +50,27 @@ export class PrismaItemRepository implements IItemRepository {
           ? specification.toPrismaWhere()
           : new FilterItemSpecification(specification).toPrismaWhere();
 
-      const [products, total] = await Promise.all([
-        prisma.product.findMany({
-          where,
-          skip,
-          take: limit,
-          orderBy: { createdAt: 'desc' },
-          include: {
-            media: true,
-            category: true,
-          },
-        }),
-        prisma.product.count({ where }),
-      ]);
+      const { products, total } = await runWithDatabase(
+        async () => {
+          const [products, total] = await Promise.all([
+            prisma.product.findMany({
+              where,
+              skip,
+              take: limit,
+              orderBy: { createdAt: 'desc' },
+              include: {
+                media: true,
+                category: true,
+              },
+            }),
+            prisma.product.count({ where }),
+          ]);
+
+          return { products, total };
+        },
+        () => ({ products: [], total: 0 }),
+        'PrismaItemRepository.findAll'
+      );
 
       return {
         items: products.map((p) => this.mapProduct(p)),
@@ -68,13 +84,18 @@ export class PrismaItemRepository implements IItemRepository {
 
   async findById(id: string): Promise<Item | null> {
     try {
-      const product = await prisma.product.findUnique({
-        where: { id },
-        include: {
-          media: true,
-          category: true,
-        },
-      });
+      const product = await runWithDatabase(
+        () =>
+          prisma.product.findUnique({
+            where: { id },
+            include: {
+              media: true,
+              category: true,
+            },
+          }),
+        null,
+        'PrismaItemRepository.findById'
+      );
 
       if (!product) return null;
 
@@ -86,97 +107,115 @@ export class PrismaItemRepository implements IItemRepository {
   }
 
   async save(data: PostItemDTO): Promise<Item> {
-    let category = await prisma.category.findFirst({
-      where: {
-        OR: [
-          { name: { equals: data.category, mode: 'insensitive' } },
-          { slug: { equals: data.category, mode: 'insensitive' } },
-        ],
-      },
-    });
+    const newProduct = await runWithDatabase(
+      async () => {
+        let category = await prisma.category.findFirst({
+          where: {
+            OR: [
+              { name: { equals: data.category, mode: 'insensitive' } },
+              { slug: { equals: data.category, mode: 'insensitive' } },
+            ],
+          },
+        });
 
-    if (!category) {
-      category = await prisma.category.findFirst();
-    }
+        if (!category) {
+          category = await prisma.category.findFirst();
+        }
 
-    const newProduct = await prisma.product.create({
-      data: {
-        name: data.name,
-        currentPrice: data.price,
-        description: data.description || '',
-        sellerId: data.studentId || 'default-seller-id',
-        categoryId: category ? category.id : 'default-category-id',
-        condition: 'USED_GOOD',
-        status: 'DRAFT',
-        media: {
-          create: data.images.map((url) => ({
-            url,
-            type: 'IMAGE',
-          })),
-        },
+        return prisma.product.create({
+          data: {
+            name: data.name,
+            currentPrice: data.price,
+            description: data.description || '',
+            sellerId: data.studentId || 'default-seller-id',
+            categoryId: category ? category.id : 'default-category-id',
+            condition: 'USED_GOOD',
+            status: 'DRAFT',
+            media: {
+              create: data.images.map((url) => ({
+                url,
+                type: 'IMAGE',
+              })),
+            },
+          },
+          include: {
+            media: true,
+            category: true,
+          },
+        });
       },
-      include: {
-        media: true,
-        category: true,
+      () => {
+        throw new Error('Database unavailable')
       },
-    });
+      'PrismaItemRepository.save'
+    );
 
     return this.mapProduct(newProduct);
   }
 
   async update(id: string, data: UpdateItemDTO): Promise<Item> {
-    let categoryId: string | undefined;
+    const { updated, finalProduct } = await runWithDatabase(
+      async () => {
+        let categoryId: string | undefined;
 
-    if (data.category) {
-      const category = await prisma.category.findFirst({
-        where: {
-          OR: [
-            { name: { equals: data.category, mode: 'insensitive' } },
-            { slug: { equals: data.category, mode: 'insensitive' } },
-          ],
-        },
-      });
-      if (category) {
-        categoryId = category.id;
-      }
-    }
+        if (data.category) {
+          const category = await prisma.category.findFirst({
+            where: {
+              OR: [
+                { name: { equals: data.category, mode: 'insensitive' } },
+                { slug: { equals: data.category, mode: 'insensitive' } },
+              ],
+            },
+          });
+          if (category) {
+            categoryId = category.id;
+          }
+        }
 
-    const updated = await prisma.product.update({
-      where: { id },
-      data: {
-        name: data.name,
-        currentPrice: data.price,
-        description: data.description,
-        sellerId: data.studentId,
-        categoryId,
-        status: data.status,
+        const updated = await prisma.product.update({
+          where: { id },
+          data: {
+            name: data.name,
+            currentPrice: data.price,
+            description: data.description,
+            sellerId: data.studentId,
+            categoryId,
+            status: data.status,
+          },
+          include: {
+            media: true,
+            category: true,
+          },
+        });
+
+        if (data.images && data.images.length > 0) {
+          await prisma.productMedia.deleteMany({
+            where: { productId: id },
+          });
+          await prisma.productMedia.createMany({
+            data: data.images.map((url) => ({
+              productId: id,
+              url,
+              type: 'IMAGE',
+            })),
+          });
+        }
+
+        const finalProduct = await prisma.product.findUnique({
+          where: { id },
+          include: {
+            media: true,
+            category: true,
+          },
+        });
+
+        return { updated, finalProduct };
       },
-      include: {
-        media: true,
-        category: true,
+      () => {
+        throw new Error('Database unavailable')
       },
-    });
-
-    if (data.images && data.images.length > 0) {
-      await prisma.productMedia.deleteMany({
-        where: { productId: id },
-      });
-      await prisma.productMedia.createMany({
-        data: data.images.map((url) => ({
-          productId: id,
-          url,
-          type: 'IMAGE',
-        })),
-      });
-    }
-
-    const finalProduct = await prisma.product.findUnique({
-      where: { id },
-      include: {
-        media: true,
-        category: true,
-      },
-    });
+      'PrismaItemRepository.update'
+    );
 
     return this.mapProduct({
       ...updated,
@@ -186,11 +225,19 @@ export class PrismaItemRepository implements IItemRepository {
   }
 
   async delete(id: string): Promise<void> {
-    await prisma.productMedia.deleteMany({
-      where: { productId: id },
-    });
-    await prisma.product.delete({
-      where: { id },
-    });
+    await runWithDatabase(
+      async () => {
+        await prisma.productMedia.deleteMany({
+          where: { productId: id },
+        });
+        await prisma.product.delete({
+          where: { id },
+        });
+      },
+      () => {
+        throw new Error('Database unavailable')
+      },
+      'PrismaItemRepository.delete'
+    );
   }
 }
