@@ -5,10 +5,10 @@ import { z } from 'zod';
  */
 const envSchema = z.object({
   // DATABASE_URL chỉ được dùng ở Server (Prisma)
-  DATABASE_URL: z.string().url(),
+  DATABASE_URL: z.string().url().default('postgresql://postgres:postgres@localhost:5432/sturelief'),
   
   // JWT_SECRET chỉ được dùng ở Server (Auth)
-  JWT_SECRET: z.string().min(32),
+  JWT_SECRET: z.string().min(32).default('super_secret_jwt_key_for_development_environment'),
   
   // Các biến có tiền tố NEXT_PUBLIC_ sẽ được expose ra Client
   NEXT_PUBLIC_API_URL: z.string().url().default('http://localhost:3000/api'),
