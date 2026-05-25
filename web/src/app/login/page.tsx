@@ -16,7 +16,7 @@ import {
   EyeOff,
 } from 'lucide-react';
 
-export default function LoginPage() {
+function LoginPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   
@@ -416,5 +416,13 @@ export default function LoginPage() {
 
       </div>
     </main>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <React.Suspense fallback={<div className="min-h-screen flex items-center justify-center">Đang tải...</div>}>
+      <LoginPageContent />
+    </React.Suspense>
   );
 }
