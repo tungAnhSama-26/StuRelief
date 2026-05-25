@@ -20,7 +20,16 @@ const envSchema = z.object({
   GOOGLE_ADMIN_EMAIL: z.string().email().default('admin@gmail.com'),
 });
 
-const _env = envSchema.safeParse(process.env);
+const _env = envSchema.safeParse({
+  DATABASE_URL: process.env.DATABASE_URL,
+  JWT_SECRET: process.env.JWT_SECRET,
+  NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL,
+  NODE_ENV: process.env.NODE_ENV,
+  CLOUDINARY_URL: process.env.CLOUDINARY_URL,
+  GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID,
+  GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET,
+  GOOGLE_ADMIN_EMAIL: process.env.GOOGLE_ADMIN_EMAIL,
+});
 
 if (!_env.success) {
   console.error(' Lỗi cấu hình môi trường Web:');
