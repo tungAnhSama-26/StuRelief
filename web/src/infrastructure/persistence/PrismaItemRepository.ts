@@ -217,11 +217,10 @@ export class PrismaItemRepository implements IItemRepository {
       'PrismaItemRepository.update'
     );
 
-    return this.mapProduct({
-      ...updated,
-      media: finalProduct?.media || [],
-      category: finalProduct?.category || null,
-    });
+    if (!finalProduct) {
+      throw new Error('Could not fetch updated product');
+    }
+    return this.mapProduct(finalProduct);
   }
 
   async delete(id: string): Promise<void> {
