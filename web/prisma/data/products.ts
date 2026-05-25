@@ -1,4 +1,4 @@
-import { ProductStatus, ItemCondition } from '@prisma/client';
+import { ItemCondition } from '@prisma/client';
 
 export const products = [
   { name: 'Macbook Air M1', price: 15000000, cat: 'electronics', condition: ItemCondition.USED_GOOD, rescue: false },
